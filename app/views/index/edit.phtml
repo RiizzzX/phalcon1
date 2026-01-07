@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?= isset($title) ? $title : 'Edit Barang' ?></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="<?= $this->url->get('css/inventory.css') ?>">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <a href="<?= $this->url->get('index/index') ?>" class="sidebar-logo">
+            <i class="fas fa-boxes"></i> InventoryTracker
+        </a>
+        <nav class="sidebar-nav">
+            <a href="<?= $this->url->get('index/index') ?>">
+                <i class="fas fa-home"></i> Beranda
+            </a>
+            <a href="<?= $this->url->get('index/list') ?>" class="active">
+                <i class="fas fa-list"></i> Inventaris
+            </a>
+        </nav>
+    </aside>
+
+    <main class="container content">
+        <div class="page-header">
+            <h1>Edit Barang</h1>
+            <a href="<?= $this->url->get('index/list') ?>" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Kembali
+            </a>
+        </div>
+
+        <!-- Flash Messages -->
+        <div class="flash-messages">
+            <?= $this->flash->output() ?>
+        </div>
+
+        <div class="form-container">
+            <form method="post" action="<?= $this->url->get('index/edit/' . $item->id) ?>">
+                <div class="form-group">
+                    <label>Nama Barang *</label>
+                    <input type="text" name="name" value="<?= htmlspecialchars($item->name) ?>" required placeholder="Nama barang">
+                </div>
+                <div class="form-group">
+                    <label>Deskripsi</label>
+                    <textarea name="description" rows="4" placeholder="Deskripsi barang"><?= htmlspecialchars($item->description) ?></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Jumlah *</label>
+                    <input type="number" name="quantity" value="<?= $item->quantity ?>" min="0" required placeholder="Jumlah barang">
+                </div>
+                <div class="form-group">
+                    <label>Kategori *</label>
+                    <select name="category" required>
+                        <option value="">Pilih Kategori</option>
+                        <option value="Elektronik" <?= $item->category == 'Elektronik' ? 'selected' : '' ?>>Elektronik</option>
+                        <option value="Furniture" <?= $item->category == 'Furniture' ? 'selected' : '' ?>>Furniture</option>
+                        <option value="Alat Tulis" <?= $item->category == 'Alat Tulis' ? 'selected' : '' ?>>Alat Tulis</option>
+                        <option value="Lainnya" <?= $item->category == 'Lainnya' ? 'selected' : '' ?>>Lainnya</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Harga (Rp) *</label>
+                    <input type="number" name="price" step="0.01" value="<?= $item->price ?>" min="0" required placeholder="0.00">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Simpan Perubahan
+                    </button>
+                    <a href="<?= $this->url->get('index/list') ?>" class="btn btn-outline">
+                        <i class="fas fa-times"></i> Batal
+                    </a>
+                </div>
+            </form>
+        </div>
+    </main>
+</body>
+</html>

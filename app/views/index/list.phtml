@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?= isset($title) ? $title : 'Daftar Inventaris' ?></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="<?= $this->url->get('css/inventory.css') ?>">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <a href="<?= $this->url->get('index/index') ?>" class="sidebar-logo">
+            <i class="fas fa-boxes"></i> InventoryTracker
+        </a>
+        <nav class="sidebar-nav">
+            <a href="<?= $this->url->get('index/index') ?>" class="<?= (strpos($this->router->getControllerName() . '/' . $this->router->getActionName(), 'index/index') !== false) ? 'active' : '' ?>">
+                <i class="fas fa-home"></i> Beranda
+            </a>
+            <a href="<?= $this->url->get('index/list') ?>" class="active">
+                <i class="fas fa-list"></i> Inventaris
+            </a>
+        </nav>
+    </aside>
+
+    <main class="container content">
+        <div class="page-header">
+            <h1>Daftar Inventaris</h1>
+            <button class="btn btn-primary" onclick="showAddForm()">
+                <i class="fas fa-plus"></i> Tambah Barang
+            </button>
+        </div>
+
+        <!-- Search Form -->
+        <div class="search-form">
+            <form method="get" action="<?= $this->url->get('index/search') ?>">
+                <div class="search-grid">
+                    <div class="form-group">
+                        <select name="category">
+                            <option value="">Semua Kategori</option>
+                            <option value="Elektronik" <?= (isset($category) && $category == 'Elektronik') ? 'selected' : '' ?>>Elektronik</option>
+                            <option value="Furniture" <?= (isset($category) && $category == 'Furniture') ? 'selected' : '' ?>>Furniture</option>
+                            <option value="Alat Tulis" <?= (isset($category) && $category == 'Alat Tulis') ? 'selected' : '' ?>>Alat Tulis</option>
+                            <option value="Lainnya" <?= (isset($category) && $category == 'Lainnya') ? 'selected' : '' ?>>Lainnya</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="date" name="start_date" placeholder="Dari tanggal..." value="<?= isset($startDate) ? htmlspecialchars($startDate) : '' ?>">
+                    </div>
+                    <div class="form-group">
+                        <input type="date" name="end_date" placeholder="Sampai tanggal..." value="<?= isset($endDate) ? htmlspecialchars($endDate) : '' ?>">
+                    </div>
+                    <div class="form-group">
+                        <input type="number" name="min_price" placeholder="Harga min..." step="0.01" value="<?= isset($minPrice) ? htmlspecialchars($minPrice) : '' ?>">
+                    </div>
+                    <div class="form-group">
+                        <input type="number" name="max_price" placeholder="Harga max..." step="0.01" value="<?= isset($maxPrice) ? htmlspecialchars($maxPrice) : '' ?>">
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Cari
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Flash Messages -->
+        <div class="flash-messages">
+            <?= $this->flash->output() ?>
+        </div>
+
+        <!-- Inventory Table -->
+        <div class="inventory-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nama Barang</th>
+                        <th>Deskripsi</th>
+                        <th>Jumlah</th>
+                        <th>Kategori</th>
+                        <th>Harga</th>
+                        <th>Dibuat</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (isset($items) && count($items) > 0): ?>
+                        <?php foreach ($items as $item): ?>
+                        <tr>
+                            <td><strong><?= htmlspecialchars($item->name) ?></strong></td>
+                            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                <?= htmlspecialchars($item->description) ?>
+                            </td>
+                            <td>
+                                <span class="quantity-badge"><?= $item->quantity ?></span>
+                                <div class="stock-controls">
+                                    <form method="post" action="<?= $this->url->get('index/updateStock/' . $item->id) ?>" class="stock-form">
+                                        <input type="number" name="amount" placeholder="Jml" min="1" value="1" required class="stock-input">
+                                        <button type="button" class="btn btn-stock-add" title="Tambah Stok" onclick="updateStock(event, 'add')">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-stock-remove" title="Kurangi Stok" onclick="updateStock(event, 'remove')">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                            <td><span class="category"><?= htmlspecialchars($item->category) ?></span></td>
+                            <td>Rp <?= number_format($item->price, 0, ',', '.') ?></td>
+                            <td><?= date('d M Y', strtotime($item->created_at)) ?></td>
+                            <td>
+                                <div class="actions">
+                                    <a href="<?= $this->url->get('index/edit/' . $item->id) ?>" class="btn btn-action-edit" title="Edit Barang">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="<?= $this->url->get('index/delete/' . $item->id) ?>" class="btn btn-action-delete" onclick="return confirmDelete(event, '<?= addslashes(htmlspecialchars($item->name)) ?>')" title="Hapus Barang">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="7" class="no-items">
+                                <i class="fas fa-box-open" style="font-size: 3rem; margin-bottom: 1rem; color: var(--gray); display: block;"></i>
+                                <h3>Belum ada barang dalam inventaris</h3>
+                                <p>Tambahkan barang pertama Anda untuk memulai</p>
+                                <button class="btn btn-primary" onclick="showAddForm()" style="margin-top: 1rem;">
+                                    <i class="fas fa-plus"></i> Tambah Barang
+                                </button>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Add Item Modal -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Tambah Barang Baru</h2>
+                <button class="close-btn" onclick="hideAddForm()">&times;</button>
+            </div>
+            <form method="post" action="<?= $this->url->get('index/add') ?>">
+                <div class="form-group">
+                    <label>Nama Barang *</label>
+                    <input type="text" name="name" required placeholder="Nama barang">
+                </div>
+                <div class="form-group">
+                    <label>Deskripsi</label>
+                    <textarea name="description" placeholder="Deskripsi barang" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Jumlah *</label>
+                    <input type="number" name="quantity" value="1" min="0" required placeholder="Jumlah barang">
+                </div>
+                <div class="form-group">
+                    <label>Kategori *</label>
+                    <select name="category" required>
+                        <option value="">Pilih Kategori</option>
+                        <option value="Elektronik">Elektronik</option>
+                        <option value="Furniture">Furniture</option>
+                        <option value="Alat Tulis">Alat Tulis</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Harga (Rp) *</label>
+                    <input type="number" name="price" step="0.01" min="0" required placeholder="0.00">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Tambah Barang
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="hideAddForm()">
+                        <i class="fas fa-times"></i> Batal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function showAddForm() {
+            document.getElementById('addModal').classList.add('show');
+        }
+        
+        function hideAddForm() {
+            document.getElementById('addModal').classList.remove('show');
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('addModal');
+            if (event.target == modal) {
+                hideAddForm();
+            }
+        };
+
+        // Handle update stock dengan AJAX
+        function updateStock(event, operation) {
+            event.preventDefault();
+            
+            const button = event.currentTarget;
+            const form = button.closest('form');
+            const amountInput = form.querySelector('input[name="amount"]');
+            const url = form.action;
+            
+            const formData = new FormData();
+            formData.append('amount', amountInput.value);
+            formData.append('operation', operation);
+            
+            fetch(url, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Gagal memperbarui stok');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Gagal memperbarui stok');
+            });
+            
+            return false;
+        }
+
+        // Handle delete dengan konfirmasi
+        function confirmDelete(event, name) {
+            if (!confirm('Yakin ingin menghapus ' + name + '?')) {
+                event.preventDefault();
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>
