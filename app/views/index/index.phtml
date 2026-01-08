@@ -4,42 +4,39 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= isset($title) ? $title : 'Simple Inventory Tracker' ?></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="<?= $this->url->get('css/inventory.css') ?>">
 </head>
-<body>
+<body style="margin-left: 0 !important;">
     <header class="navbar">
         <nav>
             <div class="logo">
-                <i class="fas fa-boxes"></i> InventoryTracker
+                InventoryManajemen
             </div>
         </nav>
     </header>
 
-    <main class="container">
+    <main class="container" style="margin-left: auto; margin-right: auto;">
         <section class="hero">
-            <h1>Simple Inventory Tracker</h1>
-            <p>Sistem manajemen inventaris sederhana yang membantu Anda mengelola dan melacak barang-barang Anda dengan mudah.</p>
+            <h1>Inventory Manjemen</h1>
+            <p>Sistem manajemen inventaris sederhana yang membantu Anda mengelola dan melacak barang-barang Anda dengan mudah dan efisien.</p>
             <div>
-                 <a href="<?= $this->url->get('index/list') ?>" class="btn">Mulai Menggunakan</a>            </div>
+                <a href="<?= $this->url->get('index/list') ?>" class="btn">Mulai Menggunakan</a>
+            </div>
         </section>
 
         <section class="features">
             <div class="feature-card">
-                <div class="feature-icon"><i class="fas fa-plus-circle"></i></div>
+                <div class="feature-icon">📦</div>
                 <h3>Tambah Barang</h3>
                 <p>Tambahkan barang baru ke inventaris Anda dengan cepat dan mudah</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon"><i class="fas fa-search"></i></div>
+                <div class="feature-icon">🔍</div>
                 <h3>Cari & Kelola</h3>
                 <p>Temukan dan kelola barang dengan fitur pencarian canggih</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon"><i class="fas fa-chart-bar"></i></div>
+                <div class="feature-icon">📊</div>
                 <h3>Laporan Real-time</h3>
                 <p>Pantau statistik inventaris secara real-time</p>
             </div>
@@ -49,22 +46,22 @@
             <h2>Statistik Inventaris</h2>
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-boxes"></i></div>
+                    <div class="stat-icon">📦</div>
                     <div class="stat-number" id="total-items">0</div>
                     <div class="stat-label">Total Barang</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-tags"></i></div>
+                    <div class="stat-icon">🏷️</div>
                     <div class="stat-number" id="total-categories">0</div>
                     <div class="stat-label">Kategori</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="stat-icon">⚠️</div>
                     <div class="stat-number" id="low-stock">0</div>
                     <div class="stat-label">Stok Rendah</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+                    <div class="stat-icon">💰</div>
                     <div class="stat-number" id="total-value">Rp 0</div>
                     <div class="stat-label">Total Nilai</div>
                 </div>
@@ -98,6 +95,9 @@
                 console.log('Could not load statistics:', error);
             }
         }
+    </script>
+</body>
+</html>
     </script>
 </body>
 </html>
