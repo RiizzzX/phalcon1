@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 simple phalcon manajemnen inventory
 =======
 # Simple Inventory Tracker (Phalcon)
