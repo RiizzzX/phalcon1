@@ -12,41 +12,56 @@ $router->add('/', [
     'action' => 'index'
 ])->setName('home');
 
-// Inventory routes (pakai IndexController)
+// Inventory routes (pakai InventoryController)
 $router->add('/inventory', [
-    'controller' => 'index',
+    'controller' => 'inventory',
     'action' => 'index'
 ]);
 
 $router->add('/inventory/index', [
-    'controller' => 'index',
+    'controller' => 'inventory',
     'action' => 'index'
 ])->setName('inventory_index');
 
 $router->add('/inventory/list', [
-    'controller' => 'index',
+    'controller' => 'inventory',
     'action' => 'list'
 ])->setName('inventory_list');
 
 $router->add('/inventory/add', [
-    'controller' => 'index',
+    'controller' => 'inventory',
     'action' => 'add'
-])->via(['POST'])->setName('inventory_add');
+])->setName('inventory_add');
+
+$router->add('/inventory/add', [
+    'controller' => 'inventory',
+    'action' => 'add'
+])->via(['POST'])->setName('inventory_add_post');
 
 $router->add('/inventory/edit/{id:[0-9]+}', [
-    'controller' => 'index',
+    'controller' => 'inventory',
     'action' => 'edit'
 ])->setName('inventory_edit');
 
 $router->add('/inventory/edit/{id:[0-9]+}', [
-    'controller' => 'index',
+    'controller' => 'inventory',
     'action' => 'edit'
 ])->via(['POST'])->setName('inventory_edit_post');
 
 $router->add('/inventory/delete/{id:[0-9]+}', [
-    'controller' => 'index',
+    'controller' => 'inventory',
     'action' => 'delete'
 ])->setName('inventory_delete');
+
+$router->add('/inventory/delete/{id:[0-9]+}', [
+    'controller' => 'inventory',
+    'action' => 'delete'
+])->via(['POST'])->setName('inventory_delete_post');
+
+$router->add('/inventory/search', [
+    'controller' => 'inventory',
+    'action' => 'search'
+])->setName('inventory_search');
 
 $router->add('/inventory/update-stock/{id:[0-9]+}', [
     'controller' => 'index',
