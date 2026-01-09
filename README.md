@@ -1,7 +1,7 @@
-<<<<<<< HEAD
+
 simple phalcon manajemnen inventory
 =======
-# Simple Inventory Tracker (Phalcon)
+# Simple Manajemen inventory (Phalcon)
 
 cara install dan menjalankan aplikasi ini, serta cara mengimpor SQL.
 
@@ -11,7 +11,7 @@ cara install dan menjalankan aplikasi ini, serta cara mengimpor SQL.
 - SQL inisialisasi: `init.sql`
 - Docker compose: `docker-compose.yml`
 
-## Opsi 1 — Jalankan dengan Docker (Direkomendasikan)
+## Opsi 1 — Jalankan dengan Docker
 Cara ini paling mudah: akan menjalankan web server, MySQL, dan phpMyAdmin.
 
 1. Pastikan [Docker Desktop](https://www.docker.com/products/docker-desktop) sudah terpasang dan berjalan.
