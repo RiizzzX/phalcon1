@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><?= $title ?? 'Rental Transactions' ?></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .container { max-width: 1400px; margin: 20px auto; padding: 20px; }
+        .btn { padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 5px; transition: all 0.3s; font-weight: 600; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        th, td { padding: 15px; text-align: left; }
+        th { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: 600; text-transform: uppercase; font-size: 13px; }
+        tbody tr { border-bottom: 1px solid #ecf0f1; transition: background 0.2s; }
+        tbody tr:hover { background: #f8f9fa; }
+        .state-draft { background: #e2e3e5; color: #383d41; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .state-confirmed { background: #d4edda; color: #155724; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .state-ongoing { background: #cce5ff; color: #004085; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .state-returned { background: #d1ecf1; color: #0c5460; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .state-cancelled { background: #f8d7da; color: #721c24; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="margin-bottom: 20px;">
+            <a href="/odoo-dashboard" style="color: #3498db; text-decoration: none;">📊 Dashboard</a> / 
+            <a href="/odoo-equipment" style="color: #3498db; text-decoration: none;">Equipment</a> / 
+            <span style="color: #7f8c8d;">Rental Transactions</span>
+        </div>
+        
+        <div class="header">
+            <h1 style="margin: 0 0 10px 0;">📋 <?= $title ?? 'Rental Transactions' ?></h1>
+            <p style="margin: 0; opacity: 0.9;">View all rental transaction history</p>
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <a href="/odoo-equipment" class="btn btn-primary">← Back to Equipment List</a>
+            <a href="/odoo-equipment/logs" class="btn btn-secondary">💾 MySQL Logs</a>
+        </div>
+        
+        <?php if (isset($rentals) && count($rentals) > 0): ?>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rental ID</th>
+                        <th>Customer</th>
+                        <th>Phone</th>
+                        <th>Equipment</th>
+                        <th>Rental Date</th>
+                        <th>Return Date</th>
+                        <th>Total Amount</th>
+                        <th>State</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($rentals as $rental): ?>
+                        <tr>
+                            <td><strong><?= htmlspecialchars($rental['name']) ?></strong></td>
+                            <td><?= htmlspecialchars($rental['customer_name']) ?></td>
+                            <td><?= htmlspecialchars($rental['customer_phone']) ?></td>
+                            <td>
+                                <?php if (is_array($rental['equipment_id'])): ?>
+                                    <?= htmlspecialchars($rental['equipment_id'][1]) ?>
+                                <?php else: ?>
+                                    Equipment #<?= $rental['equipment_id'] ?>
+                                <?php endif; ?>
+                            </td>
+                            <td><?= date('d M Y', strtotime($rental['rental_date'])) ?></td>
+                            <td><?= date('d M Y', strtotime($rental['return_date'])) ?></td>
+                            <td><strong>Rp <?= number_format($rental['total_amount'], 0, ',', '.') ?></strong></td>
+                            <td>
+                                <span class="state-<?= $rental['state'] ?>">
+                                    <?= strtoupper($rental['state']) ?>
+                                </span>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php else: ?>
+            <div style="background: #f8f9fa; padding: 30px; text-align: center; border-radius: 8px;">
+                <h3>Belum ada rental transaction</h3>
+                <p>Rental equipment untuk membuat transaksi pertama</p>
+                <a href="/odoo-equipment" class="btn btn-primary">Lihat Equipment</a>
+            </div>
+        <?php endif; ?>
+    </div>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<?= $this->getContent() ?>
+
+<div class="container" style="padding: 40px 20px;">
+    <div style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 style="margin: 0 0 10px 0; color: #2c3e50;">💰 <?= $title ?></h1>
+            <p style="margin: 0; color: #7f8c8d;">Manage customer invoices</p>
+        </div>
+        <a href="/odoo-invoicing/create" class="btn btn-primary" style="padding: 12px 24px; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; text-decoration: none; border-radius: 8px;">
+            ➕ New Invoice
+        </a>
+    </div>
+
+    <?php if (empty($invoices)): ?>
+        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; border-radius: 8px;">
+            <strong>⚠️ No Invoices Found</strong>
+            <p style="margin: 10px 0 0 0;">Create your first invoice to get started.</p>
+        </div>
+    <?php else: ?>
+        <div style="background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white;">
+                    <tr>
+                        <th style="padding: 15px; text-align: left;">Invoice #</th>
+                        <th style="padding: 15px; text-align: left;">Customer</th>
+                        <th style="padding: 15px; text-align: left;">Date</th>
+                        <th style="padding: 15px; text-align: right;">Amount</th>
+                        <th style="padding: 15px; text-align: center;">Status</th>
+                        <th style="padding: 15px; text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($invoices as $invoice): ?>
+                        <tr style="border-bottom: 1px solid #ecf0f1;">
+                            <td style="padding: 15px; font-family: monospace; font-weight: 600; color: #2c3e50;">
+                                <?= $invoice['name'] ?>
+                            </td>
+                            <td style="padding: 15px; color: #2c3e50;">
+                                <?= is_array($invoice['partner_id']) ? $invoice['partner_id'][1] : $invoice['partner_id'] ?>
+                            </td>
+                            <td style="padding: 15px; color: #7f8c8d;">
+                                <?= $invoice['invoice_date'] ? date('Y-m-d', strtotime($invoice['invoice_date'])) : '-' ?>
+                            </td>
+                            <td style="padding: 15px; text-align: right; font-weight: 600; color: #27ae60;">
+                                Rp <?= number_format($invoice['amount_total'], 0, ',', '.') ?>
+                            </td>
+                            <td style="padding: 15px; text-align: center;">
+                                <?php
+                                $statusColors = [
+                                    'posted' => '#27ae60',
+                                    'draft' => '#95a5a6',
+                                    'cancel' => '#e74c3c'
+                                ];
+                                $color = $statusColors[$invoice['state']] ?? '#95a5a6';
+                                ?>
+                                <span style="padding: 6px 12px; background: <?= $color ?>; color: white; border-radius: 20px; font-size: 12px;">
+                                    <?= strtoupper($invoice['state']) ?>
+                                </span>
+                            </td>
+                            <td style="padding: 15px; text-align: center;">
+                                <a href="/odoo-invoicing/view/<?= $invoice['id'] ?>" style="color: #3498db; text-decoration: none;">👁️ View</a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+    
+    <div style="margin-top: 30px; text-align: center;">
+        <a href="/odoo-dashboard" style="color: #3498db; text-decoration: none;">← Back to Dashboard</a>
+    </div>
+</div>

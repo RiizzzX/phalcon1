@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><?= $title ?? 'Detail Equipment' ?></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .container { max-width: 900px; margin: 20px auto; padding: 20px; }
+        .btn { padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 5px; transition: all 0.3s; font-weight: 600; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; }
+        .detail-card { background: white; border-radius: 12px; padding: 30px; margin: 20px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .detail-row { padding: 15px 0; border-bottom: 1px solid #ecf0f1; display: grid; grid-template-columns: 180px 1fr; gap: 20px; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { font-weight: 600; color: #7f8c8d; }
+        .detail-value { color: #2c3e50; font-size: 16px; }
+        .status-badge { padding: 8px 16px; border-radius: 20px; display: inline-block; font-weight: bold; font-size: 14px; }
+        .status-available { background: #d4edda; color: #155724; }
+        .status-rented { background: #f8d7da; color: #721c24; }
+        .status-maintenance { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="margin-bottom: 20px;">
+            <a href="/odoo-dashboard" style="color: #3498db; text-decoration: none;">📊 Dashboard</a> / 
+            <a href="/odoo-equipment" style="color: #3498db; text-decoration: none;">Equipment</a> / 
+            <span style="color: #7f8c8d;">Detail Equipment</span>
+        </div>
+        
+        <div class="header">
+            <h1 style="margin: 0 0 10px 0;">🎬 <?= $title ?? 'Equipment Details' ?></h1>
+            <p style="margin: 0; opacity: 0.9;">Complete information about this equipment</p>
+        </div>
+        
+        <?php if (isset($equipment)): ?>
+            <div class="detail-card">
+                <div class="detail-row">
+                    <span class="detail-label">ID:</span>
+                    <span class="detail-value"><?= $equipment['id'] ?></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Code:</span>
+                    <span class="detail-value"><strong><?= htmlspecialchars($equipment['code']) ?></strong></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Name:</span>
+                    <span class="detail-value"><?= htmlspecialchars($equipment['name']) ?></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Category:</span>
+                    <span class="detail-value"><?= ucfirst($equipment['category']) ?></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Daily Rate:</span>
+                    <span class="detail-value"><strong>Rp <?= number_format($equipment['daily_rate'], 0, ',', '.') ?></strong></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Status:</span>
+                    <span class="detail-value">
+                        <span class="status-badge status-<?= $equipment['status'] ?>">
+                            <?php
+                            $statusIcons = [
+                                'available' => '✅ Available',
+                                'rented' => '🔒 Rented',
+                                'maintenance' => '🔧 Under Maintenance',
+                                'retired' => '📦 Retired'
+                            ];
+                            echo $statusIcons[$equipment['status']] ?? ucfirst($equipment['status']);
+                            ?>
+                        </span>
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Condition:</span>
+                    <span class="detail-value"><?= ucfirst($equipment['condition']) ?></span>
+                </div>
+                <?php if (isset($equipment['description']) && $equipment['description']): ?>
+                <div class="detail-row">
+                    <span class="detail-label">Description:</span>
+                    <span class="detail-value"><?= nl2br(htmlspecialchars($equipment['description'])) ?></span>
+                </div>
+                <?php endif; ?>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0;">
+                <h4 style="margin: 0 0 15px 0; color: #2c3e50;">🔗 Aksi Terkait</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                    <a href="/odoo-equipment/rentals" style="background: #3498db; color: white; padding: 10px; border-radius: 8px; text-decoration: none; text-align: center; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                        📋 Lihat Semua Rental
+                    </a>
+                    <a href="/odoo-equipment/logs" style="background: #9b59b6; color: white; padding: 10px; border-radius: 8px; text-decoration: none; text-align: center; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                        💾 MySQL Logs
+                    </a>
+                    <a href="/odoo-dashboard" style="background: #95a5a6; color: white; padding: 10px; border-radius: 8px; text-decoration: none; text-align: center; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                        📊 Dashboard Odoo
+                    </a>
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px; text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                <?php if ($equipment['status'] == 'available'): ?>
+                    <a href="/odoo-equipment/rent/<?= $equipment['id'] ?>" class="btn btn-success" style="font-size: 16px;">🎬 Rent This Equipment</a>
+                <?php else: ?>
+                    <span style="padding: 12px 24px; background: #e74c3c; color: white; border-radius: 8px; display: inline-block; font-weight: 600;">🔒 Currently Not Available</span>
+                <?php endif; ?>
+                <a href="/odoo-equipment" class="btn btn-secondary">← Back to List</a>
+            </div>
+        <?php else: ?>
+            <p>Equipment tidak ditemukan</p>
+            <a href="/odoo-equipment" class="btn btn-secondary">← Kembali</a>
+        <?php endif; ?>
+    </div>
+</body>
+</html>

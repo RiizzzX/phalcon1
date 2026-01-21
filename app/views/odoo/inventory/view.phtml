@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><?= $title ?? 'Detail Produk' ?></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .container { max-width: 900px; margin: 20px auto; padding: 20px; }
+        .btn { padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 5px; transition: all 0.3s; font-weight: 600; border: none; cursor: pointer; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; }
+        .detail-card { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .detail-row { display: grid; grid-template-columns: 180px 1fr; gap: 15px; padding: 15px 0; border-bottom: 1px solid #ecf0f1; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { font-weight: 600; color: #7f8c8d; }
+        .detail-value { color: #2c3e50; font-size: 16px; }
+        .stock-badge { padding: 8px 16px; border-radius: 20px; font-weight: 600; display: inline-block; }
+        .stock-available { background: #d4edda; color: #155724; }
+        .stock-low { background: #fff3cd; color: #856404; }
+        .stock-out { background: #f8d7da; color: #721c24; }
+        .price-box { background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); padding: 20px; border-radius: 12px; margin: 20px 0; text-align: center; }
+        .price-label { font-size: 14px; color: #2c3e50; margin-bottom: 5px; }
+        .price-value { font-size: 32px; font-weight: 700; color: #2c3e50; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="margin-bottom: 20px;">
+            <a href="/odoo-dashboard" style="color: #3498db; text-decoration: none;">📊 Dashboard</a> / 
+            <a href="/odoo-inventory" style="color: #3498db; text-decoration: none;">Inventory</a> / 
+            <span style="color: #7f8c8d;">Detail Produk</span>
+        </div>
+        
+        <div class="header">
+            <h1 style="margin: 0 0 10px 0;">📦 Detail Produk</h1>
+            <p style="margin: 0; opacity: 0.9;">Informasi lengkap produk</p>
+        </div>
+
+        <?php if (isset($product)): ?>
+            <div class="detail-card">
+                <div class="detail-row">
+                    <div class="detail-label">Nama Produk</div>
+                    <div class="detail-value"><strong><?= htmlspecialchars($product['name']) ?></strong></div>
+                </div>
+                
+                <?php if (isset($product['default_code']) && !empty($product['default_code'])): ?>
+                <div class="detail-row">
+                    <div class="detail-label">Kode Produk</div>
+                    <div class="detail-value"><?= htmlspecialchars($product['default_code']) ?></div>
+                </div>
+                <?php endif; ?>
+                
+                <?php if (isset($product['barcode']) && !empty($product['barcode'])): ?>
+                <div class="detail-row">
+                    <div class="detail-label">Barcode</div>
+                    <div class="detail-value"><?= htmlspecialchars($product['barcode']) ?></div>
+                </div>
+                <?php endif; ?>
+                
+                <?php if (isset($product['categ_id']) && is_array($product['categ_id'])): ?>
+                <div class="detail-row">
+                    <div class="detail-label">Kategori</div>
+                    <div class="detail-value"><?= htmlspecialchars($product['categ_id'][1]) ?></div>
+                </div>
+                <?php endif; ?>
+                
+                <div class="detail-row">
+                    <div class="detail-label">Tipe Produk</div>
+                    <div class="detail-value">
+                        <?php 
+                        $typeLabels = [
+                            'product' => 'Barang Stok',
+                            'consu' => 'Consumable',
+                            'service' => 'Jasa'
+                        ];
+                        echo $typeLabels[$product['type']] ?? ucfirst($product['type']);
+                        ?>
+                    </div>
+                </div>
+                
+                <?php if (isset($product['uom_id']) && is_array($product['uom_id'])): ?>
+                <div class="detail-row">
+                    <div class="detail-label">Satuan</div>
+                    <div class="detail-value"><?= htmlspecialchars($product['uom_id'][1]) ?></div>
+                </div>
+                <?php endif; ?>
+                
+                <div class="detail-row">
+                    <div class="detail-label">Stok Tersedia</div>
+                    <div class="detail-value">
+                        <?php 
+                        $stock = $product['qty_available'] ?? 0;
+                        if ($stock > 10) {
+                            $badgeClass = 'stock-available';
+                            $statusText = 'Stok Cukup';
+                        } elseif ($stock > 0) {
+                            $badgeClass = 'stock-low';
+                            $statusText = 'Stok Menipis';
+                        } else {
+                            $badgeClass = 'stock-out';
+                            $statusText = 'Stok Habis';
+                        }
+                        ?>
+                        <span class="stock-badge <?= $badgeClass ?>">
+                            <?= number_format($stock, 0) ?> Unit - <?= $statusText ?>
+                        </span>
+                    </div>
+                </div>
+                
+                <?php if (isset($product['description']) && !empty($product['description'])): ?>
+                <div class="detail-row">
+                    <div class="detail-label">Deskripsi</div>
+                    <div class="detail-value"><?= nl2br(htmlspecialchars($product['description'])) ?></div>
+                </div>
+                <?php endif; ?>
+            </div>
+            
+            <div class="price-box">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <div class="price-label">💰 Harga Jual</div>
+                        <div class="price-value">Rp <?= number_format($product['list_price'] ?? 0, 0, ',', '.') ?></div>
+                    </div>
+                    <div>
+                        <div class="price-label">📊 Harga Beli</div>
+                        <div class="price-value">Rp <?= number_format($product['standard_price'] ?? 0, 0, ',', '.') ?></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0;">
+                <h4 style="margin: 0 0 15px 0; color: #2c3e50;">🔗 Aksi Terkait</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <a href="/odoo-purchase/create?product_id=<?= $product['id'] ?>" style="background: #3498db; color: white; padding: 10px; border-radius: 8px; text-decoration: none; text-align: center; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                        🛒 Buat Purchase Order
+                    </a>
+                    <a href="/odoo-sales/create?product_id=<?= $product['id'] ?>" style="background: #27ae60; color: white; padding: 10px; border-radius: 8px; text-decoration: none; text-align: center; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                        💰 Buat Sales Order
+                    </a>
+                    <a href="/odoo-inventory/movements" style="background: #9b59b6; color: white; padding: 10px; border-radius: 8px; text-decoration: none; text-align: center; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                        🔄 Lihat Mutasi Stok
+                    </a>
+                    <a href="/odoo-dashboard" style="background: #95a5a6; color: white; padding: 10px; border-radius: 8px; text-decoration: none; text-align: center; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                        📊 Dashboard Odoo
+                    </a>
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px; text-align: center;">
+                <a href="/odoo-inventory" class="btn btn-primary">← Kembali ke Inventory</a>
+                <a href="/odoo-inventory/update-stock/<?= $product['id'] ?>" class="btn" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">📊 Update Stok</a>
+                <a href="/odoo-inventory/edit/<?= $product['id'] ?>" class="btn btn-warning">✏️ Edit Produk</a>
+            </div>
+        <?php else: ?>
+            <div style="background: #f8f9fa; padding: 30px; text-align: center; border-radius: 12px;">
+                <h3>Produk tidak ditemukan</h3>
+                <a href="/odoo-inventory" class="btn btn-primary">← Kembali ke Inventory</a>
+            </div>
+        <?php endif; ?>
+    </div>
+</body>
+</html>

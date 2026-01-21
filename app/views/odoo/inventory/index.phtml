@@ -1,0 +1,92 @@
+<?= $this->getContent() ?>
+
+<div class="container" style="padding: 40px 20px;">
+    <div style="margin-bottom: 20px;">
+        <a href="/odoo-dashboard" style="color: #3498db; text-decoration: none;">📊 Dashboard</a> / 
+        <span style="color: #7f8c8d;">Inventory</span>
+    </div>
+    <div style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 style="margin: 0 0 10px 0; color: #2c3e50;">📦 <?= $title ?></h1>
+            <p style="margin: 0; color: #7f8c8d;">Kelola inventori dan stok produk</p>
+        </div>
+        <div>
+            <a href="/odoo-inventory/create-product" class="btn btn-primary" style="padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; display: inline-block;">
+                ➕ Tambah Produk
+            </a>
+            <a href="/odoo-inventory/movements" class="btn btn-secondary" style="padding: 12px 24px; background: #95a5a6; color: white; text-decoration: none; border-radius: 8px; margin-left: 10px; display: inline-block;">
+                🔄 Mutasi Stok
+            </a>
+        </div>
+    </div>
+
+    <?php if (empty($products)): ?>
+        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <strong>⚠️ Belum Ada Produk</strong>
+            <p style="margin: 10px 0 0 0;">Mulai dengan menambahkan produk pertama ke inventori.</p>
+        </div>
+    <?php else: ?>
+        <div style="background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <tr>
+                        <th style="padding: 15px; text-align: left;">Kode</th>
+                        <th style="padding: 15px; text-align: left;">Nama Produk</th>
+                        <th style="padding: 15px; text-align: left;">Kategori</th>
+                        <th style="padding: 15px; text-align: right;">Stok</th>
+                        <th style="padding: 15px; text-align: right;">Harga</th>
+                        <th style="padding: 15px; text-align: center;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($products as $product): ?>
+                        <tr style="border-bottom: 1px solid #ecf0f1;">
+                            <td style="padding: 15px; font-family: monospace; color: #7f8c8d;">
+                                <?= $product['default_code'] ?: '-' ?>
+                            </td>
+                            <td style="padding: 15px; font-weight: 600; color: #2c3e50;">
+                                <?= htmlspecialchars($product['name']) ?>
+                            </td>
+                            <td style="padding: 15px; color: #7f8c8d;">
+                                <?= is_array($product['categ_id']) ? $product['categ_id'][1] : 'Tanpa Kategori' ?>
+                            </td>
+                            <td style="padding: 15px; text-align: right; font-weight: 600; color: <?= ($product['qty_available'] ?? 0) > 0 ? '#27ae60' : '#e74c3c' ?>;">
+                                <?= number_format($product['qty_available'] ?? 0, 0) ?>
+                            </td>
+                            <td style="padding: 15px; text-align: right; font-weight: 600; color: #2c3e50;">
+                                Rp <?= number_format($product['list_price'] ?? 0, 0, ',', '.') ?>
+                            </td>
+                            <td style="padding: 15px; text-align: center;">
+                                <a href="/odoo-inventory/view/<?= $product['id'] ?>" style="color: #3498db; text-decoration: none; margin: 0 5px;">👁️ Lihat</a>
+                                <a href="/odoo-inventory/edit/<?= $product['id'] ?>" style="color: #f39c12; text-decoration: none; margin: 0 5px;">✏️ Edit</a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: #ecf0f1; border-radius: 8px; text-align: center; color: #7f8c8d;">
+            Total Produk: <strong style="color: #2c3e50;"><?= count($products) ?></strong>
+        </div>
+        
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0;">
+            <h4 style="margin: 0 0 15px 0; color: #2c3e50;">🔗 Modul Terkait</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                <a href="/odoo-purchase" style="background: #3498db; color: white; padding: 10px; border-radius: 8px; text-decoration: none; text-align: center; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                    🛒 Purchase Orders
+                </a>
+                <a href="/odoo-sales" style="background: #27ae60; color: white; padding: 10px; border-radius: 8px; text-decoration: none; text-align: center; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                    💰 Sales Orders
+                </a>
+                <a href="/odoo-invoicing" style="background: #e67e22; color: white; padding: 10px; border-radius: 8px; text-decoration: none; text-align: center; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                    🧾 Invoices
+                </a>
+            </div>
+        </div>
+    <?php endif; ?>
+    
+    <div style="margin-top: 30px; text-align: center;">
+        <a href="/odoo-dashboard" style="color: #3498db; text-decoration: none;">← Kembali ke Dashboard</a>
+    </div>
+</div>

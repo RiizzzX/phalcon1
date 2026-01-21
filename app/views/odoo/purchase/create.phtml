@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><?= $title ?? 'Buat Purchase Order' ?></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .container { max-width: 900px; margin: 20px auto; padding: 20px; }
+        .btn { padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 5px; border: none; cursor: pointer; font-weight: 600; transition: all 0.3s; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; }
+        .form-section { background: white; padding: 25px; border-radius: 12px; margin: 20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .form-group { margin: 20px 0; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 8px; color: #2c3e50; font-size: 14px; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; box-sizing: border-box; font-size: 14px; transition: border 0.3s; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #667eea; }
+        .required { color: #e74c3c; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .info-box { background: #e7f3ff; border-left: 4px solid #3498db; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .product-info { background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); padding: 15px; border-radius: 8px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <?= $this->getContent() ?>
+    
+    <div class="container">
+        <div style="margin-bottom: 20px;">
+            <a href="/odoo-dashboard" style="color: #3498db; text-decoration: none;">📊 Dashboard</a> / 
+            <a href="/odoo-purchase" style="color: #3498db; text-decoration: none;">Purchase</a> / 
+            <span style="color: #7f8c8d;">Buat PO</span>
+        </div>
+        
+        <div class="header">
+            <h1 style="margin: 0 0 10px 0;">🛒 <?= $title ?? 'Buat Purchase Order' ?></h1>
+            <p style="margin: 0; opacity: 0.9;">Buat pesanan pembelian ke supplier</p>
+        </div>
+
+        <div class="info-box">
+            <strong>ℹ️ Info:</strong> Purchase Order digunakan untuk membeli produk dari supplier. 
+            Setelah PO di-confirm, stok akan otomatis bertambah saat barang diterima.
+        </div>
+
+        <form method="POST" action="/odoo-purchase/create" id="poForm">
+            <div class="form-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0; color: #2c3e50;">🏢 Supplier</h3>
+                    <a href="/odoo-purchase/create-supplier" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600;">
+                        ➕ Tambah Supplier
+                    </a>
+                </div>
+                
+                <div class="form-group">
+                    <label>Pilih Supplier <span class="required">*</span></label>
+                    <select name="partner_id" required>
+                        <option value="">-- Pilih Supplier --</option>
+                        <?php if (isset($suppliers) && count($suppliers) > 0): ?>
+                            <?php foreach ($suppliers as $supplier): ?>
+                                <option value="<?= $supplier['id'] ?>">
+                                    <?= htmlspecialchars($supplier['name']) ?>
+                                    <?php if (isset($supplier['phone'])): ?>
+                                        - <?= htmlspecialchars($supplier['phone']) ?>
+                                    <?php endif; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <option value="">Belum ada supplier</option>
+                        <?php endif; ?>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3 style="margin: 0 0 20px 0; color: #2c3e50;">📦 Produk</h3>
+                
+                <div class="form-group">
+                    <label>Pilih Produk <span class="required">*</span></label>
+                    <select name="product_id" id="productSelect" required onchange="updateProductInfo()">
+                        <option value="">-- Pilih Produk --</option>
+                        <?php if (isset($products) && count($products) > 0): ?>
+                            <?php foreach ($products as $product): ?>
+                                <option value="<?= $product['id'] ?>" 
+                                        data-name="<?= htmlspecialchars($product['name']) ?>"
+                                        data-price="<?= $product['standard_price'] ?? 0 ?>"
+                                        data-code="<?= htmlspecialchars($product['default_code'] ?? '') ?>"
+                                        <?= (isset($preselected_product) && $preselected_product == $product['id']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($product['name']) ?>
+                                    <?php if (isset($product['default_code'])): ?>
+                                        [<?= htmlspecialchars($product['default_code']) ?>]
+                                    <?php endif; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <option value="">Belum ada produk</option>
+                        <?php endif; ?>
+                    </select>
+                </div>
+                
+                <div id="productInfo" class="product-info" style="display: none;">
+                    <strong>Informasi Produk:</strong>
+                    <div style="margin-top: 10px;">
+                        <div>Nama: <span id="infoName">-</span></div>
+                        <div>Kode: <span id="infoCode">-</span></div>
+                        <div>Harga Beli: Rp <span id="infoPrice">0</span></div>
+                    </div>
+                </div>
+                
+                <input type="hidden" name="product_name" id="productName">
+                
+                <div class="form-row" style="margin-top: 20px;">
+                    <div class="form-group">
+                        <label>Quantity <span class="required">*</span></label>
+                        <input type="number" name="quantity" id="quantity" value="1" min="1" step="1" required onchange="calculateTotal()">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Harga Per Unit <span class="required">*</span></label>
+                        <input type="number" name="price" id="price" value="0" min="0" step="0.01" required onchange="calculateTotal()">
+                    </div>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; text-align: center;">
+                    <div style="color: #7f8c8d; font-size: 14px; margin-bottom: 5px;">Total Amount</div>
+                    <div style="font-size: 24px; font-weight: 700; color: #2c3e50;">
+                        Rp <span id="totalAmount">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px; text-align: center;">
+                <button type="submit" class="btn btn-success" style="font-size: 16px;">✅ Buat Purchase Order</button>
+                <a href="/odoo-purchase" class="btn btn-secondary">← Batal</a>
+            </div>
+        </form>
+    </div>
+    
+    <script>
+        // Product data from PHP
+        const products = <?= json_encode($products ?? []) ?>;
+        
+        function updateProductInfo() {
+            const select = document.getElementById('productSelect');
+            const option = select.options[select.selectedIndex];
+            const productInfo = document.getElementById('productInfo');
+            
+            if (option.value) {
+                const name = option.dataset.name || '-';
+                const code = option.dataset.code || '-';
+                const price = parseFloat(option.dataset.price) || 0;
+                
+                document.getElementById('infoName').textContent = name;
+                document.getElementById('infoCode').textContent = code;
+                document.getElementById('infoPrice').textContent = price.toLocaleString('id-ID');
+                document.getElementById('productName').value = name;
+                document.getElementById('price').value = price;
+                
+                productInfo.style.display = 'block';
+                calculateTotal();
+            } else {
+                productInfo.style.display = 'none';
+            }
+        }
+        
+        function calculateTotal() {
+            const quantity = parseFloat(document.getElementById('quantity').value) || 0;
+            const price = parseFloat(document.getElementById('price').value) || 0;
+            const total = quantity * price;
+            
+            document.getElementById('totalAmount').textContent = total.toLocaleString('id-ID');
+        }
+        
+        // Auto-select if preselected
+        <?php if (isset($preselected_product)): ?>
+        window.addEventListener('load', function() {
+            updateProductInfo();
+        });
+        <?php endif; ?>
+    </script>
+</body>
+</html>

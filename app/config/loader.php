@@ -16,6 +16,7 @@ $loader->setDirectories(
 $loader->setNamespaces([
     'App\\Controllers' => $config->application->controllersDir,
     'App\\Models'      => $config->application->modelsDir,
+    'App\\Library'     => $config->application->libraryDir,
 ]);
 
 $loader->register();

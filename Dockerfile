@@ -4,7 +4,12 @@ RUN apt-get update && apt-get install -y \
 	git \
 	unzip \
 	libzip-dev \
+	libxml2-dev \
 	wget \
+	build-essential \
+	gcc \
+	make \
+	autoconf \
 	&& docker-php-ext-install pdo_mysql mysqli zip
 
 # Install PSR extension (required by Phalcon)

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><?= $title ?? 'Rental Logs' ?></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .container { max-width: 1400px; margin: 20px auto; padding: 20px; }
+        .btn { padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 5px; transition: all 0.3s; font-weight: 600; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        th, td { padding: 15px; text-align: left; }
+        th { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: 600; text-transform: uppercase; font-size: 13px; }
+        tbody tr { border-bottom: 1px solid #ecf0f1; transition: background 0.2s; }
+        tbody tr:hover { background: #f8f9fa; }
+        .badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-info { background: #d1ecf1; color: #0c5460; }
+        .badge-warning { background: #fff3cd; color: #856404; }
+        .info-box { background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); border-left: 4px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 8px; color: #2c3e50; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 style="margin: 0 0 10px 0;">💾 <?= $title ?? 'Rental Logs (MySQL Database)' ?></h1>
+            <p style="margin: 0; opacity: 0.9;">Backup rental data synchronized from Odoo PostgreSQL</p>
+        </div>
+        
+        <div class="info-box">
+            <strong>ℹ️ Info:</strong> Data ini disimpan di MySQL database sebagai backup/log dari Odoo PostgreSQL.
+            Sinkronisasi otomatis saat rental dibuat atau saat halaman rentals diakses.
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <a href="/odoo-equipment/rentals" class="btn btn-primary">🔄 Sync dari Odoo</a>
+            <a href="/odoo-equipment" class="btn btn-success">← Back to Equipment</a>
+        </div>
+        
+        <?php if (isset($logs) && count($logs) > 0): ?>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Rental Number</th>
+                        <th>Customer</th>
+                        <th>Phone</th>
+                        <th>Equipment</th>
+                        <th>Rental Date</th>
+                        <th>Return Date</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Last Sync</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($logs as $log): ?>
+                        <tr>
+                            <td><?= $log->id ?></td>
+                            <td><strong><?= htmlspecialchars($log->rental_number) ?></strong></td>
+                            <td><?= htmlspecialchars($log->customer_name) ?></td>
+                            <td><?= htmlspecialchars($log->customer_phone) ?></td>
+                            <td><?= htmlspecialchars($log->equipment_name) ?></td>
+                            <td><?= date('d M Y', strtotime($log->rental_date)) ?></td>
+                            <td><?= date('d M Y', strtotime($log->return_date)) ?></td>
+                            <td>Rp <?= number_format($log->total_amount, 0, ',', '.') ?></td>
+                            <td>
+                                <span class="badge badge-<?= $log->status == 'confirmed' ? 'success' : 'info' ?>">
+                                    <?= strtoupper($log->status) ?>
+                                </span>
+                            </td>
+                            <td><?= date('d M Y H:i', strtotime($log->synced_at)) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            
+            <p style="color: #666; font-size: 14px;">
+                Total: <?= count($logs) ?> rental records in MySQL database
+            </p>
+        <?php else: ?>
+            <div style="background: #f8f9fa; padding: 30px; text-align: center; border-radius: 8px;">
+                <h3>Belum ada rental logs</h3>
+                <p>Rental logs akan otomatis tersimpan saat transaksi dibuat</p>
+                <a href="/odoo-equipment" class="btn btn-primary">Lihat Equipment</a>
+            </div>
+        <?php endif; ?>
+    </div>
+</body>
+</html>

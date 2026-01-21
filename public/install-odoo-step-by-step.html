@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Install Odoo Modules - Fixed</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .warning { background: #fff3cd; border: 1px solid #ffc107; color: #856404; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .step { background: #f8f9fa; padding: 20px; margin: 15px 0; border-left: 4px solid #007bff; border-radius: 4px; }
+        .step h3 { margin-top: 0; color: #007bff; }
+        .step-number { background: #007bff; color: white; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-right: 10px; font-weight: bold; }
+        .code { background: #272822; color: #f8f8f2; padding: 15px; border-radius: 5px; font-family: 'Courier New', monospace; margin: 10px 0; overflow-x: auto; }
+        ul { line-height: 1.8; }
+        .btn { display: inline-block; padding: 12px 30px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; margin: 10px 5px; font-weight: bold; }
+        .btn:hover { background: #218838; }
+        .btn-primary { background: #007bff; }
+        .btn-primary:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Install Odoo Modules - Step by Step</h1>
+        
+        <div class="warning">
+            <strong>⚠️ Penting:</strong> Ikuti langkah-langkah ini dengan URUTAN yang benar untuk menghindari error.
+        </div>
+        
+        <div class="step">
+            <h3><span class="step-number">1</span> Buka Odoo Admin Panel</h3>
+            <p>Buka browser dan akses:</p>
+            <div class="code">http://localhost:8069</div>
+            <p>Login dengan:</p>
+            <ul>
+                <li><strong>Email:</strong> farizlahya@gmail.com</li>
+                <li><strong>Password:</strong> guwosari6b</li>
+            </ul>
+        </div>
+        
+        <div class="step">
+            <h3><span class="step-number">2</span> Aktifkan Developer Mode</h3>
+            <ul>
+                <li>Klik menu <strong>Settings</strong> (di kiri atas)</li>
+                <li>Scroll ke bawah sampai section "Developer Tools"</li>
+                <li>Klik <strong>Activate the developer mode</strong></li>
+            </ul>
+        </div>
+        
+        <div class="step">
+            <h3><span class="step-number">3</span> Update Apps List</h3>
+            <ul>
+                <li>Klik menu <strong>Apps</strong></li>
+                <li>Klik icon <strong>⋮</strong> (tiga titik) di pojok kanan atas</li>
+                <li>Pilih <strong>Update Apps List</strong></li>
+                <li>Klik <strong>Update</strong> di dialog yang muncul</li>
+                <li>Tunggu proses selesai</li>
+            </ul>
+        </div>
+        
+        <div class="step">
+            <h3><span class="step-number">4</span> Install Modules (URUTAN PENTING!)</h3>
+            <p>Install modules dengan urutan berikut:</p>
+            
+            <ol style="font-size: 16px; line-height: 2;">
+                <li>
+                    <strong>Accounting</strong>
+                    <ul>
+                        <li>Hapus filter "Apps" di search bar</li>
+                        <li>Search: <code>accounting</code></li>
+                        <li>Klik <strong>Install</strong> pada module "Accounting"</li>
+                        <li>Tunggu sampai selesai (bisa 2-3 menit)</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>Inventory</strong>
+                    <ul>
+                        <li>Search: <code>inventory</code></li>
+                        <li>Install module "Inventory"</li>
+                        <li>Tunggu sampai selesai</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>Purchase</strong>
+                    <ul>
+                        <li>Search: <code>purchase</code></li>
+                        <li>Install module "Purchase"</li>
+                        <li>Tunggu sampai selesai</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>Sales</strong>
+                    <ul>
+                        <li>Search: <code>sales</code></li>
+                        <li>Install module "Sales"</li>
+                        <li>Tunggu sampai selesai</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+        
+        <div class="step">
+            <h3><span class="step-number">5</span> Verify Installation</h3>
+            <p>Setelah semua module terinstall, verify dengan cara:</p>
+            <ul>
+                <li>Klik menu <strong>Apps</strong></li>
+                <li>Filter dengan "Installed"</li>
+                <li>Pastikan ada: Accounting, Inventory, Purchase, Sales</li>
+            </ul>
+        </div>
+        
+        <div class="success">
+            <strong>✅ Setelah Selesai:</strong>
+            <ul style="margin: 10px 0;">
+                <li>Semua menu (Inventory, Purchase, Sales, Invoicing) akan muncul di top menu</li>
+                <li>Error "duplicate key" tidak akan muncul lagi</li>
+                <li>Bisa mulai menggunakan integrasi dengan Phalcon</li>
+            </ul>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="http://localhost:8069" target="_blank" class="btn">🚀 Buka Odoo Sekarang</a>
+            <a href="/odoo-dashboard" class="btn btn-primary">← Dashboard</a>
+        </div>
+        
+        <div style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 5px;">
+            <h3>🆘 Masih Error?</h3>
+            <p>Jika masih muncul error, coba reset database:</p>
+            <div class="code">
+docker-compose down<br>
+docker volume rm coba_odoo_data coba_postgres_data<br>
+docker-compose up -d<br>
+# Tunggu 2 menit, lalu buat database baru di http://localhost:8069/web/database/manager
+            </div>
+        </div>
+    </div>
+</body>
+</html>

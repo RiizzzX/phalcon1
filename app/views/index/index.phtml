@@ -19,8 +19,11 @@
         <section class="hero">
             <h1>Inventory Manjemen</h1>
             <p>Sistem manajemen inventaris sederhana yang membantu Anda mengelola dan melacak barang-barang Anda dengan mudah dan efisien.</p>
-            <div>
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
                 <a href="<?= $this->url->get('index/list') ?>" class="btn">Mulai Menggunakan</a>
+                <a href="<?= $this->url->get('odoo-dashboard') ?>" class="btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    🎯 Odoo Dashboard
+                </a>
             </div>
         </section>
 
@@ -40,6 +43,7 @@
                 <h3>Laporan Real-time</h3>
                 <p>Pantau statistik inventaris secara real-time</p>
             </div>
+           
         </section>
 
         <section class="stats">

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Rental Transaction Tree View -->
+    <record id="view_rental_transaction_tree" model="ir.ui.view">
+        <field name="name">rental.transaction.tree</field>
+        <field name="model">rental.transaction</field>
+        <field name="arch" type="xml">
+            <tree string="Rentals">
+                <field name="name"/>
+                <field name="customer_name"/>
+                <field name="equipment_id"/>
+                <field name="rental_date"/>
+                <field name="return_date"/>
+                <field name="duration_days"/>
+                <field name="total_amount"/>
+                <field name="payment_status" decoration-success="payment_status=='paid'" decoration-warning="payment_status=='pending'"/>
+                <field name="state" decoration-info="state=='draft'" decoration-success="state=='returned'"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Rental Transaction Form View -->
+    <record id="view_rental_transaction_form" model="ir.ui.view">
+        <field name="name">rental.transaction.form</field>
+        <field name="model">rental.transaction</field>
+        <field name="arch" type="xml">
+            <form string="Rental Transaction">
+                <header>
+                    <button name="action_confirm" string="Confirm" type="object" invisible="state != 'draft'" class="btn-primary"/>
+                    <button name="action_start_rental" string="Start Rental" type="object" invisible="state != 'confirmed'" class="btn-success"/>
+                    <button name="action_return" string="Return Equipment" type="object" invisible="state != 'ongoing'" class="btn-warning"/>
+                    <button name="action_cancel" string="Cancel" type="object" invisible="state not in ['draft', 'confirmed']" class="btn-danger"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,ongoing,returned"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Customer Information">
+                            <field name="customer_name"/>
+                            <field name="customer_phone"/>
+                            <field name="customer_email"/>
+                        </group>
+                        <group string="Rental Information">
+                            <field name="equipment_id"/>
+                            <field name="rental_date"/>
+                            <field name="return_date"/>
+                            <field name="actual_return_date" readonly="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Pricing">
+                            <field name="duration_days" readonly="1"/>
+                            <field name="daily_rate" readonly="1"/>
+                            <field name="total_amount" readonly="1"/>
+                            <field name="deposit"/>
+                            <field name="payment_status"/>
+                        </group>
+                        <group string="Notes">
+                            <field name="notes" nolabel="1"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Rental Action -->
+    <record id="action_rental_transaction" model="ir.actions.act_window">
+        <field name="name">Rentals</field>
+        <field name="res_model">rental.transaction</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Sequence for Rental Number -->
+    <record id="seq_rental_transaction" model="ir.sequence">
+        <field name="name">Rental Transaction Sequence</field>
+        <field name="code">rental.transaction</field>
+        <field name="prefix">RNT/</field>
+        <field name="padding">5</field>
+    </record>
+
+    <!-- Menu -->
+    <menuitem id="menu_rental_transaction" name="Rentals" parent="menu_equipment_rental_root" action="action_rental_transaction" sequence="20"/>
+</odoo>

@@ -35,5 +35,34 @@ services:
       - mysql
     restart: unless-stopped
 
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=odoo
+      - POSTGRES_PASSWORD=odoo
+    volumes:
+      - coba_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  odoo:
+    image: odoo:17.0
+    depends_on:
+      - postgres
+    ports:
+      - "8069:8069"
+    environment:
+      - HOST=postgres
+      - USER=odoo
+      - PASSWORD=odoo
+    volumes:
+      - coba_odoo_data:/var/lib/odoo
+      - ./addons:/mnt/extra-addons
+    restart: unless-stopped
+
 volumes:
   mysql_data:
+  coba_postgres_data:
+    external: true
+  coba_odoo_data:
+    external: true

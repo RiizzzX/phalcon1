@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fix Odoo Stock Error</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .error-box { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .solution-box { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .step { background: #f8f9fa; padding: 15px; margin: 10px 0; border-left: 4px solid #007bff; }
+        .code { background: #272822; color: #f8f8f2; padding: 15px; border-radius: 5px; font-family: monospace; margin: 10px 0; }
+        h1 { color: #dc3545; }
+        h2 { color: #007bff; }
+    </style>
+</head>
+<body>
+    <h1>⚠️ Odoo Stock Error - Fix Guide</h1>
+    
+    <div class="error-box">
+        <strong>Error:</strong> "res.config.settings"."group_stock_tracking_lot" field is undefined.
+        <br><br>
+        <strong>Penyebab:</strong> Module Stock/Inventory dependencies belum lengkap terinstall.
+    </div>
+    
+    <h2>🔧 Solusi (Pilih Salah Satu):</h2>
+    
+    <div class="step">
+        <h3>Solusi 1: Install via Odoo UI (RECOMMENDED)</h3>
+        <ol>
+            <li>Buka <a href="http://localhost:8069" target="_blank">http://localhost:8069</a></li>
+            <li>Login: <code>farizlahya@gmail.com</code> / <code>guwosari6b</code></li>
+            <li>Klik menu <strong>Apps</strong></li>
+            <li>Hapus filter "Apps" di search bar</li>
+            <li>Search dan install satu per satu:
+                <ul>
+                    <li><strong>Inventory</strong> (stock)</li>
+                    <li><strong>Stock Account</strong> (stock_account)</li>
+                    <li><strong>Accounting</strong> (account)</li>
+                    <li><strong>Purchase</strong></li>
+                    <li><strong>Sales</strong></li>
+                </ul>
+            </li>
+            <li>Setelah install, tunggu beberapa saat lalu <strong>Refresh browser</strong></li>
+        </ol>
+    </div>
+    
+    <div class="step">
+        <h3>Solusi 2: Via Terminal (Jika Solusi 1 Gagal)</h3>
+        <p>Jalankan command ini di PowerShell:</p>
+        <div class="code">
+docker exec -it new-odoo-1 odoo -d coba_odoo --stop-after-init -i stock,stock_account,account,purchase,sale_management --without-demo=all
+        </div>
+        <p>Lalu restart Odoo:</p>
+        <div class="code">
+docker restart new-odoo-1
+        </div>
+    </div>
+    
+    <div class="step">
+        <h3>Solusi 3: Update Apps List</h3>
+        <p>Jika module tidak muncul:</p>
+        <ol>
+            <li>Buka <a href="http://localhost:8069" target="_blank">Odoo</a></li>
+            <li>Settings → Activate Developer Mode</li>
+            <li>Apps → Update Apps List</li>
+            <li>Tunggu proses selesai</li>
+            <li>Search dan install module yang diperlukan</li>
+        </ol>
+    </div>
+    
+    <div class="solution-box">
+        <strong>✅ Setelah Fix:</strong>
+        <ul>
+            <li>Error akan hilang</li>
+            <li>Bisa akses Settings tanpa error</li>
+            <li>Module Inventory, Purchase, Sales berfungsi normal</li>
+            <li>Bisa lanjut ke integrasi dengan Phalcon</li>
+        </ul>
+    </div>
+    
+    <h2>🎯 Test Setelah Fix</h2>
+    <p>Buka halaman berikut untuk verify:</p>
+    <ul>
+        <li><a href="http://localhost:8069/web#menu_id=84&action=94" target="_blank">Inventory → Products</a></li>
+        <li><a href="http://localhost:8069/web#menu_id=178&action=263" target="_blank">Purchase → Orders</a></li>
+        <li><a href="http://localhost:8069/web#menu_id=167&action=250" target="_blank">Sales → Orders</a></li>
+    </ul>
+    
+    <p style="margin-top: 40px;">
+        <a href="/odoo-dashboard" style="padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">← Back to Odoo Dashboard</a>
+    </p>
+</body>
+</html>

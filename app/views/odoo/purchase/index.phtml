@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><?= $title ?? 'Purchase Orders' ?></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .container { max-width: 1200px; margin: 20px auto; padding: 20px; }
+        .btn { padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 5px; transition: all 0.3s; font-weight: 600; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        th, td { padding: 15px; text-align: left; }
+        th { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: 600; text-transform: uppercase; font-size: 13px; }
+        tbody tr { border-bottom: 1px solid #ecf0f1; transition: background 0.2s; }
+        tbody tr:hover { background: #f8f9fa; }
+        .state-draft { background: #e2e3e5; color: #383d41; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .state-sent { background: #cce5ff; color: #004085; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .state-purchase { background: #d4edda; color: #155724; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .state-done { background: #d1ecf1; color: #0c5460; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .state-cancel { background: #f8d7da; color: #721c24; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="margin-bottom: 20px;">
+            <a href="/odoo-dashboard" style="color: #3498db; text-decoration: none;">📊 Dashboard</a> / 
+            <span style="color: #7f8c8d;">Purchase Orders</span>
+        </div>
+        
+        <div class="header">
+            <h1 style="margin: 0 0 10px 0;">🛒 Purchase Orders</h1>
+            <p style="margin: 0; opacity: 0.9;">Kelola pesanan pembelian dari supplier</p>
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <a href="/odoo-purchase/create" class="btn btn-success">➕ Buat Purchase Order</a>
+            <a href="/odoo-inventory" class="btn btn-primary">📦 Lihat Inventory</a>
+        </div>
+        
+        <?php if (isset($orders) && count($orders) > 0): ?>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nomor PO</th>
+                        <th>Supplier</th>
+                        <th>Tanggal Order</th>
+                        <th>Total Amount</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($orders as $order): ?>
+                        <tr>
+                            <td><strong><?= htmlspecialchars($order['name']) ?></strong></td>
+                            <td>
+                                <?php if (is_array($order['partner_id'])): ?>
+                                    <?= htmlspecialchars($order['partner_id'][1]) ?>
+                                <?php else: ?>
+                                    Partner #<?= $order['partner_id'] ?>
+                                <?php endif; ?>
+                            </td>
+                            <td><?= date('d M Y', strtotime($order['date_order'])) ?></td>
+                            <td style="font-weight: 600; color: #2c3e50;">Rp <?= number_format($order['amount_total'], 0, ',', '.') ?></td>
+                            <td><span class="state-<?= $order['state'] ?>"><?= strtoupper($order['state']) ?></span></td>
+                            <td>
+                                <a href="/odoo-purchase/view/<?= $order['id'] ?>" style="color: #3498db; text-decoration: none;">👁️ Lihat</a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php else: ?>
+            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <strong>⚠️ Belum Ada Purchase Order</strong>
+                <p style="margin: 10px 0 0 0;">Mulai dengan membuat purchase order pertama untuk memesan produk dari supplier.</p>
+            </div>
+        <?php endif; ?>
+        
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="/odoo-dashboard" style="color: #3498db; text-decoration: none;">← Kembali ke Dashboard</a>
+        </div>
+    </div>
+</body>
+</html>

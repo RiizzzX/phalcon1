@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><?= $title ?? 'Rental Equipment' ?></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .container { max-width: 900px; margin: 20px auto; padding: 20px; }
+        .btn { padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 5px; border: none; cursor: pointer; font-weight: 600; transition: all 0.3s; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; }
+        .equipment-info { background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); border-radius: 12px; padding: 25px; margin: 20px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .form-group { margin: 20px 0; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 8px; color: #2c3e50; font-size: 14px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; box-sizing: border-box; font-size: 14px; transition: border 0.3s; }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #667eea; }
+        .form-group textarea { resize: vertical; min-height: 100px; }
+        .required { color: #e74c3c; }
+        .form-section { background: white; padding: 25px; border-radius: 12px; margin: 20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="margin-bottom: 20px;">
+            <a href="/odoo-dashboard" style="color: #3498db; text-decoration: none;">📊 Dashboard</a> / 
+            <a href="/odoo-equipment" style="color: #3498db; text-decoration: none;">Equipment</a> / 
+            <span style="color: #7f8c8d;">Rental Form</span>
+        </div>
+        
+        <div class="header">
+            <h1 style="margin: 0 0 10px 0;">🎬 <?= $title ?? 'Rent Equipment' ?></h1>
+            <p style="margin: 0; opacity: 0.9;">Fill in the rental information below</p>
+        </div>
+        
+        <?php if (isset($debug)): ?>
+            <div style="background: #fff3cd; padding: 10px; margin: 10px 0; border-radius: 4px;">
+                <strong>Debug:</strong> <?= $debug ?>
+            </div>
+        <?php endif; ?>
+        
+        <?php if (isset($equipment)): ?>
+            <div class="equipment-info">
+                <h3>📦 Equipment Information</h3>
+                <p><strong>Name:</strong> <?= htmlspecialchars($equipment['name']) ?></p>
+                <p><strong>Code:</strong> <?= htmlspecialchars($equipment['code']) ?></p>
+                <p><strong>Daily Rate:</strong> <span style="color: #28a745; font-weight: bold;">Rp <?= number_format($equipment['daily_rate'], 0, ',', '.') ?></span></p>
+                <p><strong>Condition:</strong> <?= ucfirst($equipment['condition']) ?></p>
+            </div>
+            
+            <form method="POST" action="/odoo-equipment/rent/<?= $equipment['id'] ?>">
+                <div class="form-section">
+                    <h3 style="margin: 0 0 20px 0; color: #2c3e50;">👤 Customer Information</h3>
+                
+                <div class="form-group">
+                    <label>Customer Name <span class="required">*</span></label>
+                    <input type="text" name="customer_name" required placeholder="Masukkan nama lengkap">
+                </div>
+                
+                <div class="form-group">
+                    <label>Phone Number <span class="required">*</span></label>
+                    <input type="tel" name="customer_phone" required placeholder="08xx-xxxx-xxxx">
+                </div>
+                
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="customer_email" placeholder="customer@email.com">
+                </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3 style="margin: 0 0 20px 0; color: #2c3e50;">📅 Rental Period</h3>
+                
+                <div class="form-group">
+                    <label>Rental Date <span class="required">*</span></label>
+                    <input type="date" name="rental_date" required value="<?= date('Y-m-d') ?>">
+                </div>
+                
+                <div class="form-group">
+                    <label>Return Date <span class="required">*</span></label>
+                    <input type="date" name="return_date" required value="<?= date('Y-m-d', strtotime('+7 days')) ?>">
+                </div>
+                
+                <div class="form-group">
+                    <label>Deposit Amount (Rp)</label>
+                    <input type="number" name="deposit" step="1000" placeholder="0" value="<?= $equipment['daily_rate'] ?>">
+                </div>
+                
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea name="notes" placeholder="Catatan tambahan (opsional)"></textarea>
+                </div>
+                </div>
+                
+                <div style="margin-top: 30px; text-align: center;">
+                    <button type="submit" class="btn btn-success" style="font-size: 16px;">✅ Submit Rental</button>
+                    <a href="/odoo-equipment" class="btn btn-secondary">← Cancel</a>
+                </div>
+                </div>
+            </form>
+        <?php else: ?>
+            <p>Equipment tidak ditemukan</p>
+            <a href="/odoo-equipment" class="btn btn-secondary">← Kembali</a>
+        <?php endif; ?>
+    </div>
+</body>
+</html>
