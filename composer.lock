@@ -1,0 +1,78 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "41324f654dda36eece21169e4daf8be0",
+    "packages": [
+        {
+            "name": "darkaonline/ripcord",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/DarkaOnLine/Ripcord.git",
+                "reference": "e511f0569aff024b4a039fedc06c3101fe45ab99"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/DarkaOnLine/Ripcord/zipball/e511f0569aff024b4a039fedc06c3101fe45ab99",
+                "reference": "e511f0569aff024b4a039fedc06c3101fe45ab99",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.4"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^2.14@dev"
+            },
+            "default-branch": true,
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Ripcord\\": "src/Ripcord"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Darius Matulionis",
+                    "email": "darius@matulionis.lt"
+                }
+            ],
+            "description": "RPC client and server around PHP's xmlrpc library",
+            "keywords": [
+                "rpc",
+                "xml",
+                "xmlrpc"
+            ],
+            "support": {
+                "issues": "https://github.com/DarkaOnLine/Ripcord/issues",
+                "source": "https://github.com/DarkaOnLine/Ripcord/tree/v0.3"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/DarkaOnLine",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-02-26T17:28:57+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "dev",
+    "stability-flags": {
+        "darkaonline/ripcord": 20
+    },
+    "prefer-stable": true,
+    "prefer-lowest": false,
+    "platform": {
+        "php": "^8.0"
+    },
+    "platform-dev": {},
+    "plugin-api-version": "2.9.0"
+}

@@ -131,6 +131,16 @@ $router->add('/odoo-equipment/create', [
     'action' => 'create'
 ])->setName('odoo_equipment_create');
 
+$router->add('/odoo-equipment/edit/{id:[0-9]+}', [
+    'controller' => 'odooEquipment',
+    'action' => 'edit'
+])->setName('odoo_equipment_edit');
+
+$router->add('/odoo-equipment/delete/{id:[0-9]+}', [
+    'controller' => 'odooEquipment',
+    'action' => 'delete'
+])->setName('odoo_equipment_delete');
+
 $router->add('/odoo-equipment/view/{id:[0-9]+}', [
     'controller' => 'odooEquipment',
     'action' => 'view'

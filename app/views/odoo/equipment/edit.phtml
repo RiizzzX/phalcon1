@@ -1,0 +1,78 @@
+<?= $this->getContent() ?>
+
+<div class="container" style="padding: 40px 20px;">
+    <h1 style="margin-bottom: 30px; color: #2c3e50;">✏️ <?= $title ?></h1>
+
+    <form method="post" style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 700px;">
+        <input type="hidden" name="id" value="<?= htmlspecialchars($equipment['id']) ?>">
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">Equipment Name *</label>
+            <input type="text" name="name" required value="<?= htmlspecialchars($equipment['name'] ?? '') ?>"
+                   style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; font-size: 14px;"
+                   placeholder="e.g., Camera Sony A7III">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">Equipment Code *</label>
+                <input type="text" name="code" required value="<?= htmlspecialchars($equipment['code'] ?? '') ?>"
+                       style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; font-size: 14px;"
+                       placeholder="e.g., CAM-001">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">Category *</label>
+                <select name="category" required style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; font-size: 14px;">
+                    <option value="">Select Category</option>
+                    <?php $categories = ['camera','lens','lighting','audio','video','accessories','other']; ?>
+                    <?php foreach ($categories as $cat): ?>
+                        <option value="<?= $cat ?>" <?= (isset($equipment['category']) && $equipment['category']==$cat)? 'selected' : '' ?>><?= ucfirst($cat) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">Daily Rate (Rp) *</label>
+                <input type="number" name="daily_rate" required step="0.01" min="0" value="<?= htmlspecialchars($equipment['daily_rate'] ?? '') ?>"
+                       style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; font-size: 14px;"
+                       placeholder="0.00">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">Condition *</label>
+                <select name="condition" required style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; font-size: 14px;">
+                    <option value="">Select Condition</option>
+                    <?php $conds = ['excellent','good','fair','needs_repair']; ?>
+                    <?php foreach ($conds as $c): ?>
+                        <option value="<?= $c ?>" <?= (isset($equipment['condition']) && $equipment['condition']==$c)? 'selected' : '' ?>><?= ucfirst(str_replace('_',' ',$c)) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">Status *</label>
+            <select name="status" required style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; font-size: 14px;">
+                <?php $stats = ['available','rented','maintenance','retired']; ?>
+                <?php foreach ($stats as $s): ?>
+                    <option value="<?= $s ?>" <?= (isset($equipment['status']) && $equipment['status']==$s)? 'selected' : '' ?>><?= ucfirst($s) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">Description</label>
+            <textarea name="description" rows="4" style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; font-size: 14px;" placeholder="Equipment specifications, accessories included, etc."><?= htmlspecialchars($equipment['description'] ?? '') ?></textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 30px;">
+            <button type="submit" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer;">
+                ✓ Update Equipment
+            </button>
+            <a href="/odoo-equipment" style="flex: 1; padding: 12px; background: #95a5a6; color: white; text-decoration: none; border-radius: 8px; text-align: center; display: block;">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>

@@ -1,8 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use Phalcon\Di\FactoryDefault;
-
 error_reporting(E_ALL);
 
 define('BASE_PATH', dirname(__DIR__));
@@ -13,7 +11,7 @@ try {
      * The FactoryDefault Dependency Injector automatically registers
      * the services that provide a full stack framework.
      */
-    $di = new FactoryDefault();
+    $di = new \Phalcon\Di\FactoryDefault();
 
     /**
      * Read services
@@ -39,9 +37,21 @@ try {
      * Handle the request
      */
     $application = new \Phalcon\Mvc\Application($di);
+    
+    // Debug: log request URI
+    error_log("REQUEST_URI: " . $_SERVER['REQUEST_URI']);
+    error_log("DOCUMENT_ROOT: " . $_SERVER['DOCUMENT_ROOT']);
+    
+    $response = $application->handle($_SERVER['REQUEST_URI']);
+    
+    // Debug: log matched route
+    error_log("Matched Controller: " . $application->getDI()->getDispatcher()->getControllerName());
+    error_log("Matched Action: " . $application->getDI()->getDispatcher()->getActionName());
 
-    echo $application->handle($_SERVER['REQUEST_URI'])->getContent();
+    echo $response->getContent();
 } catch (\Exception $e) {
+    error_log("Exception: " . $e->getMessage());
+    error_log("Trace: " . $e->getTraceAsString());
     echo $e->getMessage() . '<br>';
     echo '<pre>' . $e->getTraceAsString() . '</pre>';
 }

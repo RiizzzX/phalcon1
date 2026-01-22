@@ -317,4 +317,12 @@ class OdooClient
     {
         return $this->getEquipments([['status', '=', 'available']]);
     }
+
+    /**
+     * Delete equipment by ID (unlink in Odoo)
+     */
+    public function deleteEquipment($id)
+    {
+        return $this->execute('equipment.rental', 'unlink', [[$id]]);
+    }
 }

@@ -114,6 +114,10 @@
                             <td><?= ucfirst($equipment['condition']) ?></td>
                             <td style="white-space: nowrap;">
                                 <a href="/odoo-equipment/view/<?= $equipment['id'] ?>" class="btn btn-primary" style="padding: 5px 10px; font-size: 13px;">👁️ View</a>
+                                <a href="/odoo-equipment/edit/<?= $equipment['id'] ?>" class="btn btn-success" style="padding: 5px 10px; font-size: 13px;">✏️ Edit</a>
+                                <form method="post" action="/odoo-equipment/delete/<?= $equipment['id'] ?>" style="display:inline;" onsubmit="return confirm('Hapus equipment ini?');">
+                                    <button type="submit" class="btn btn-secondary" style="padding: 5px 10px; font-size: 13px;">🗑️ Delete</button>
+                                </form>
                                 <?php if ($equipment['status'] == 'available'): ?>
                                     <a href="/odoo-equipment/rent/<?= $equipment['id'] ?>" class="btn btn-success" style="padding: 5px 10px; font-size: 13px;">🎬 Rent</a>
                                 <?php else: ?>
@@ -135,7 +139,7 @@
         <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0;">
             <h4 style="margin: 0 0 15px 0; color: #2c3e50;">🔗 Modul Lainnya</h4>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-                <a href="/odoo-inventory" style="background: #3498db; color: white; padding: 10px; border-radius: 8px; text-decoration: none; text-align: center; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                <a href="/inventory" style="background: #3498db; color: white; padding: 10px; border-radius: 8px; text-decoration: none; text-align: center; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'>
                     📦 Inventory
                 </a>
                 <a href="/odoo-sales" style="background: #27ae60; color: white; padding: 10px; border-radius: 8px; text-decoration: none; text-align: center; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">

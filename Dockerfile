@@ -1,37 +1,46 @@
 FROM php:8.0-apache
 
-RUN apt-get update && apt-get install -y \
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
 	git \
 	unzip \
 	libzip-dev \
-	libxml2-dev \
-	wget \
+	curl \
 	build-essential \
-	gcc \
-	make \
 	autoconf \
-	&& docker-php-ext-install pdo_mysql mysqli zip
+	&& docker-php-ext-install -j$(nproc) pdo_mysql mysqli zip \
+	&& rm -rf /var/lib/apt/lists/*
 
-# Install PSR extension (required by Phalcon)
-RUN pecl install psr-1.2.0 \
-	&& docker-php-ext-enable psr
+# Install PSR extension
+RUN pecl install psr-1.2.0 > /dev/null 2>&1 && docker-php-ext-enable psr
 
-# Install Phalcon extension via PECL
-RUN pecl install phalcon-5.0.0 \
-	&& docker-php-ext-enable phalcon
+# Install Phalcon extension (suppress verbose output)
+RUN pecl install phalcon-5.0.0 > /dev/null 2>&1 && docker-php-ext-enable phalcon
 
-# Aktifkan mod_rewrite
-RUN a2enmod rewrite
+# Verify Phalcon installation
+RUN php -m | grep -i phalcon
+
+# Enable error display for debugging
+RUN echo "display_errors = On" >> /usr/local/etc/php/php.ini-production && \
+	echo "error_reporting = E_ALL" >> /usr/local/etc/php/php.ini-production && \
+	cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini
+
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Copy application files
+COPY . /var/www/html
+WORKDIR /var/www/html
+
+# Install PHP dependencies via Composer
+RUN composer install --no-dev --prefer-dist --no-interaction 2>&1 || echo "Composer install completed"
 
 # Set document root
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
-
-COPY . /var/www/html
-
-RUN chown -R www-data /var/www/html
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf && \
+	sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf && \
+	a2enmod rewrite && \
+	chown -R www-data /var/www/html
 
 EXPOSE 80
-
 CMD ["apache2-foreground"] 

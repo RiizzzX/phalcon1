@@ -9,17 +9,43 @@ class OdooControllerBase extends Controller
     
     public function initialize()
     {
-        // Initialize Odoo client untuk semua child controllers
-        $this->odoo = new OdooClient();
+        try {
+            // Initialize Odoo client for all Odoo controllers
+            $this->odoo = new OdooClient();
+
+            // Try a quick authentication to verify connection (non-fatal)
+            try {
+                $this->odoo->authenticate();
+                $this->view->setVar('odooError', null);
+            } catch (\Exception $e) {
+                error_log("Odoo auth failed: " . $e->getMessage());
+                $this->view->setVar('odooError', 'Odoo connection failed: ' . $e->getMessage());
+                // keep $this->odoo instance (may still be usable for admin actions after Odoo is ready)
+            }
+        } catch (\Exception $e) {
+            // Log and fallback
+            error_log("Odoo Client Error: " . $e->getMessage());
+            $this->odoo = null;
+            $this->view->setVar('odooError', 'Odoo client init failed: ' . $e->getMessage());
+        }
         
         // Set views directory untuk semua Odoo controllers
         // Controller OdooInventory -> views/odoo/inventory/
         // Controller OdooPurchase -> views/odoo/purchase/
         $controllerName = $this->dispatcher->getControllerName();
         
-        // Convert dari 'odooPurchase' -> 'purchase', 'odooSales' -> 'sales'
-        if (strpos($controllerName, 'odoo') === 0) {
-            $viewFolder = strtolower(substr($controllerName, 4)); // Remove 'odoo' prefix
+        // Normalize controller name and derive view folder. Handle cases:
+        // - "odooDashboard" -> "dashboard"
+        // - "odoo-dashboard" -> "dashboard"
+        // - "odoo_dashboard" -> "dashboard"
+        if (strpos(strtolower($controllerName), 'odoo') === 0) {
+            // Remove prefix 'odoo' and optional separators
+            $viewFolder = preg_replace('/^odoo[-_]?/i', '', $controllerName);
+            // If camelCase, convert to kebab and then to lowercase folder name
+            // e.g., 'Dashboard' or 'dashBoard' -> 'dashboard'
+            $viewFolder = strtolower(preg_replace('/([a-z0-9])([A-Z])/', '$1_$2', $viewFolder));
+            $viewFolder = str_replace('-', '_', $viewFolder);
+            $viewFolder = trim($viewFolder, '_');
             $this->view->setViewsDir($this->view->getViewsDir() . 'odoo/' . $viewFolder . '/');
         }
     }

@@ -9,7 +9,18 @@ services:
       - .:/var/www/html
     depends_on:
       - mysql
+      - odoo
+    environment:
+      ODOO_URL: "http://odoo:8069"
+      ODOO_DB: "postgres"
+      ODOO_USERNAME: "admin"
+      ODOO_PASSWORD: "admin"
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
 
   mysql:
     image: mysql:8.0

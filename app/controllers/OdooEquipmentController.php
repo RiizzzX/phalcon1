@@ -1,6 +1,7 @@
 <?php
 
 use App\Library\OdooClient;
+use App\Models\Inventory;
 
 class OdooEquipmentController extends OdooControllerBase
 {
@@ -70,8 +71,21 @@ class OdooEquipmentController extends OdooControllerBase
                 $equipmentId = $odoo->createEquipment($data);
                 
                 if ($equipmentId) {
+                    // Also create a local Inventory item so it appears in Inventory
+                    try {
+                        $item = new Inventory();
+                        $item->name = $data['name'];
+                        $item->description = $data['description'] ?? '';
+                        $item->quantity = 1;
+                        $item->category = $data['category'] ?? 'other';
+                        $item->price = (float)$data['daily_rate'];
+                        $item->save();
+                    } catch (\Exception $invEx) {
+                        error_log('Failed to create inventory item: ' . $invEx->getMessage());
+                    }
+
                     $this->flash->success("Equipment berhasil dibuat dengan ID: $equipmentId");
-                    return $this->response->redirect('odoo-equipment');
+                    return $this->response->redirect('inventory/list');
                 } else {
                     $this->flash->error("Gagal membuat equipment");
                 }
@@ -81,6 +95,75 @@ class OdooEquipmentController extends OdooControllerBase
         }
         
         $this->view->title = "Create Equipment";
+    }
+
+    /**
+     * Edit equipment
+     */
+    public function editAction($id)
+    {
+        try {
+            $odoo = new OdooClient();
+            $equipment = $odoo->getEquipment($id);
+
+            if (!$equipment) {
+                $this->flash->error("Equipment tidak ditemukan");
+                return $this->response->redirect('odoo-equipment');
+            }
+
+            if ($this->request->isPost()) {
+                $data = [
+                    'name' => $this->request->getPost('name'),
+                    'code' => $this->request->getPost('code'),
+                    'category' => $this->request->getPost('category'),
+                    'daily_rate' => (float)$this->request->getPost('daily_rate'),
+                    'condition' => $this->request->getPost('condition'),
+                    'status' => $this->request->getPost('status'),
+                    'description' => $this->request->getPost('description')
+                ];
+
+                $odoo->updateEquipment($id, $data);
+
+                // Optionally update local inventory by name
+                try {
+                    $local = Inventory::findFirst(["name = ?0", 'bind' => [$data['name']]]);
+                    if ($local) {
+                        $local->description = $data['description'];
+                        $local->category = $data['category'];
+                        $local->price = (float)$data['daily_rate'];
+                        $local->save();
+                    }
+                } catch (\Exception $invEx) {
+                    error_log('Failed to update inventory item: ' . $invEx->getMessage());
+                }
+
+                $this->flash->success('Equipment berhasil diupdate');
+                return $this->response->redirect('odoo-equipment');
+            }
+
+            $this->view->equipment = $equipment;
+            $this->view->title = 'Edit Equipment';
+        } catch (\Exception $e) {
+            $this->flash->error("Error: " . $e->getMessage());
+            return $this->response->redirect('odoo-equipment');
+        }
+    }
+
+    /**
+     * Delete equipment
+     */
+    public function deleteAction($id)
+    {
+        try {
+            $odoo = new OdooClient();
+            $odoo->deleteEquipment($id);
+
+            $this->flash->success('Equipment berhasil dihapus');
+        } catch (\Exception $e) {
+            $this->flash->error('Gagal menghapus equipment: ' . $e->getMessage());
+        }
+
+        return $this->response->redirect('odoo-equipment');
     }
 
     /**

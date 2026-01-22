@@ -16,35 +16,36 @@
         .btn-success { background: #28a745; color: white; }
         .btn-warning { background: #ffc107; color: #333; }
         .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; border-radius: 8px; margin-bottom: 30px; }
+        .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 4px; margin-bottom: 20px; border: 1px solid #f5c6cb; }
     </style>
 </head>
 <body>
     <div class="container">
+        <?php if (!empty($odooError)): ?>
+            <div class="error">
+                <strong>⚠️ Error:</strong> <?= htmlspecialchars($odooError) ?>
+            </div>
+        <?php endif; ?>
+        
         <div class="header">
             <h1>🎯 Odoo Integration Dashboard</h1>
             <p>Kelola Purchase, Inventory, Sales, dan Invoicing dari Odoo</p>
         </div>
         
-        <div style="background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); padding: 20px; border-radius: 12px; margin-bottom: 30px;">
-            <h3 style="margin: 0 0 15px 0; color: #2c3e50;">⚡ Aksi Cepat</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-                <a href="/odoo-inventory/create-product" style="background: white; padding: 15px; border-radius: 8px; text-decoration: none; color: #2c3e50; font-weight: 600; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
-                    ➕ Tambah Produk
-                </a>
-                <a href="/odoo-purchase/create" style="background: white; padding: 15px; border-radius: 8px; text-decoration: none; color: #2c3e50; font-weight: 600; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
-                    🛒 Buat Purchase
-                </a>
-                <a href="/odoo-sales/create" style="background: white; padding: 15px; border-radius: 8px; text-decoration: none; color: #2c3e50; font-weight: 600; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
-                    💰 Buat Sales
-                </a>
-                <a href="/odoo-invoicing/create" style="background: white; padding: 15px; border-radius: 8px; text-decoration: none; color: #2c3e50; font-weight: 600; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
-                    🧾 Buat Invoice
-                </a>
-                <a href="/odoo-equipment/create" style="background: white; padding: 15px; border-radius: 8px; text-decoration: none; color: #2c3e50; font-weight: 600; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
-                    🎬 Tambah Equipment
-                </a>
-            </div>
-        </div>
+        <?php if (!empty($odooError)): ?>
+            <div class="error">⚠️ <?= htmlspecialchars($odooError) ?> — <a href="http://localhost:8069" target="_blank">Buka Odoo</a></div>
+        <?php endif; ?>
+
+        <?php if (!empty($odooEquipments)): ?>
+            <h3>Sample Equipments (dari Odoo)</h3>
+            <ul>
+            <?php foreach ($odooEquipments as $eq): ?>
+                <li><?= htmlspecialchars($eq['name'] ?? $eq['code'] ?? 'Unnamed') ?></li>
+            <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+        
+
         
         <div class="module-grid">
             <div class="module-card" style="border-left: 4px solid #dc3545;">
@@ -58,7 +59,7 @@
                 <div class="module-icon">📦</div>
                 <div class="module-title">Inventory Management</div>
                 <div class="module-desc">Kelola produk, stok, dan pergerakan barang</div>
-                <a href="/odoo-inventory" class="btn btn-primary">Buka Inventory</a>
+                <a href="/inventory" class="btn btn-primary">Buka Inventory</a>
             </div>
             
             <div class="module-card" style="border-left: 4px solid #007bff;">
