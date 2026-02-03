@@ -1,0 +1,51 @@
+<div class="container mt-4">
+    <h1>✏️ Edit Product</h1>
+    
+    <div class="card" style="max-width: 600px;">
+        <div class="card-body">
+            <form method="POST" action="/inventory-maker/edit/{{ product.id }}">
+                <div class="mb-3">
+                    <label class="form-label">Name *</label>
+                    <input type="text" name="name" class="form-control" value="{{ product.name }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">SKU</label>
+                    <input type="text" name="sku" class="form-control" value="{{ product.sku }}">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Category</label>
+                    <input type="text" name="category" class="form-control" value="{{ product.category }}">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Sale Price *</label>
+                    <input type="number" name="selling_price" class="form-control" step="0.01" value="{{ product.selling_price }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Cost Price</label>
+                    <input type="number" name="cost_price" class="form-control" step="0.01" value="{{ product.cost_price }}">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Type</label>
+                    <select name="product_type" class="form-control">
+                        <option value="consu" {% if product.product_type == 'consu' %}selected{% endif %}>Consumable</option>
+                        <option value="product" {% if product.product_type == 'product' %}selected{% endif %}>Storable</option>
+                        <option value="service" {% if product.product_type == 'service' %}selected{% endif %}>Service</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="form-control" rows="3">{{ product.description }}</textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Update</button>
+                <a href="/inventory-maker/list" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>

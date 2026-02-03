@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><?= $title ?? 'Purchase Orders' ?></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .container { max-width: 1200px; margin: 20px auto; padding: 20px; }
+        .btn { padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 5px; transition: all 0.3s; font-weight: 600; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        th, td { padding: 15px; text-align: left; }
+        th { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: 600; text-transform: uppercase; font-size: 13px; }
+        tbody tr { border-bottom: 1px solid #ecf0f1; transition: background 0.2s; }
+        tbody tr:hover { background: #f8f9fa; }
+        .state-draft { background: #e2e3e5; color: #383d41; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .state-sent { background: #cce5ff; color: #004085; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .state-purchase { background: #d4edda; color: #155724; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .state-done { background: #d1ecf1; color: #0c5460; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .state-cancel { background: #f8d7da; color: #721c24; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .state-processing { background: #fff3cd; color: #856404; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    </style>
+    <style>
+        @keyframes modalFadeIn {
+            to { transform: scale(1); }
+        }
+        #createPoModal.show {
+            display: flex;
+        }
+        select:focus, input:focus {
+            border-color: #3498db !important;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        #savePoModal:hover {
+            background: linear-gradient(135deg, #2980b9, #21618c) !important;
+            transform: translateY(-2px);
+        }
+        #cancelPoModal:hover {
+            background: linear-gradient(135deg, #7f8c8d, #6c7b7d) !important;
+            transform: translateY(-2px);
+        }
+    </style>
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="margin-bottom: 20px;">
+            <a href="/odoo-dashboard" style="color: #3498db; text-decoration: none;">📊 Dashboard</a> / 
+            <span style="color: #7f8c8d;">Purchase Orders</span>
+        </div>
+        
+        <div class="header">
+            <h1 style="margin: 0 0 10px 0;">🛒 Purchase Orders</h1>
+            <p style="margin: 0; opacity: 0.9;">Kelola pesanan pembelian dari supplier</p>
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <button id="openCreatePoModal" class="btn btn-success">➕ Buat Purchase Order</button>
+            <a href="/odoo-inventory" class="btn btn-primary">📦 Lihat Inventory</a>
+        </div>
+
+        <!-- Create PO Modal -->
+        <div id="createPoModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(5px);">
+            <div style="background: linear-gradient(145deg, #ffffff, #f0f0f0); max-width: 850px; margin: 60px auto; padding: 30px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); transform: scale(0.9); transition: transform 0.3s ease; animation: modalFadeIn 0.3s forwards;">
+                <h3 style="margin-top:0; color: #2c3e50; font-weight: 700; text-align: center; margin-bottom: 25px;">🛒 Buat Purchase Order Baru</h3>
+                <div id="poMsg" style="margin-bottom:15px; text-align: center;"></div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div>
+                        <label style="display:block; font-weight:700; margin-bottom:8px; color: #34495e;">Supplier <span style="color:#e74c3c">*</span></label>
+                        <select id="modal_supplier" style="width:100%; padding:12px; border:2px solid #bdc3c7; border-radius:10px; font-size:16px; transition: border-color 0.3s;"></select>
+                    </div>
+
+                    <div>
+                        <label style="display:block; font-weight:700; margin-bottom:8px; color: #34495e;">Produk <span style="color:#e74c3c">*</span></label>
+                        <select id="modal_product" style="width:100%; padding:12px; border:2px solid #bdc3c7; border-radius:10px; font-size:16px; transition: border-color 0.3s;"></select>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom: 25px;">
+                    <div>
+                        <label style="display:block; font-weight:700; margin-bottom:8px; color: #34495e;">Quantity</label>
+                        <input id="modal_qty" type="number" value="1" min="1" style="width:100%; padding:12px; border:2px solid #bdc3c7; border-radius:10px; font-size:16px; transition: border-color 0.3s;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-weight:700; margin-bottom:8px; color: #34495e;">Harga Per Unit</label>
+                        <input id="modal_price" type="number" value="0" min="0" step="0.01" style="width:100%; padding:12px; border:2px solid #bdc3c7; border-radius:10px; font-size:16px; transition: border-color 0.3s;">
+                    </div>
+                </div>
+
+                <div style="text-align:center; margin-top:30px;">
+                    <button id="cancelPoModal" style="padding: 12px 30px; background: linear-gradient(135deg, #95a5a6, #7f8c8d); color: white; border: none; border-radius: 25px; font-weight: 600; cursor: pointer; margin-right: 15px; transition: all 0.3s;">Batal</button>
+                    <button id="savePoModal" style="padding: 12px 30px; background: linear-gradient(135deg, #3498db, #2980b9); color: white; border: none; border-radius: 25px; font-weight: 600; cursor: pointer; transition: all 0.3s;">Simpan PO</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detail PO Modal -->
+        <div id="detailPoModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 9998; backdrop-filter: blur(5px);">
+            <div style="background: white; max-width: 900px; margin: auto; padding: 30px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); max-height: 80vh; overflow-y: auto;">
+                <h3 style="margin-top:0; color: #2c3e50; font-weight: 700; margin-bottom: 20px;">📄 Detail Purchase Order</h3>
+                <div id="detailMsg" style="margin-bottom:15px; text-align: center;"></div>
+                <div id="detailContent"></div>
+                <div style="text-align: center; margin-top: 25px;">
+                    <button id="closePODetail" style="padding: 10px 25px; background: #95a5a6; color: white; border: none; border-radius: 20px; font-weight: 600; cursor: pointer; margin-right: 10px;">Tutup</button>
+                    <button id="approvePO" style="padding: 10px 25px; background: #27ae60; color: white; border: none; border-radius: 20px; font-weight: 600; cursor: pointer; margin-right: 10px;">✅ Setujui</button>
+                    <button id="rejectPO" style="padding: 10px 25px; background: #e74c3c; color: white; border: none; border-radius: 20px; font-weight: 600; cursor: pointer; margin-right: 10px;">❌ Tolak</button>
+                    <button id="deletePO" style="display:none; padding: 10px 25px; background: #7f8c8d; color: white; border: none; border-radius: 20px; font-weight: 600; cursor: pointer;">🗑️ Hapus</button>
+                </div>
+            </div>
+        </div>
+        
+        <?php if (isset($orders) && count($orders) > 0): ?>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nomor PO</th>
+                        <th>Supplier</th>
+                        <th>Produk</th>
+                        <th>Tanggal Order</th>
+                        <th>Total Amount</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="poTableBody">
+                    <?php foreach ($orders as $order): ?>
+                        <tr>
+                            <td><strong><?= htmlspecialchars($order['name']) ?></strong></td>
+                            <td>
+                                <?php if (is_array($order['partner_id'])): ?>
+                                    <?= htmlspecialchars($order['partner_id'][1]) ?>
+                                <?php else: ?>
+                                    Partner #<?= $order['partner_id'] ?>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if (!empty($order['products'])): ?>
+                                    <?= htmlspecialchars(implode(', ', $order['products'])) ?>
+                                <?php else: ?>
+                                    -
+                                <?php endif; ?>
+                            </td>
+                            <td><?= date('d M Y', strtotime($order['date_order'])) ?></td>
+                            <td style="font-weight: 600; color: #2c3e50;">Rp <?= number_format($order['amount_total'], 0, ',', '.') ?></td>
+                            <td>
+                                <?php 
+                                    $hasLocal = !empty($order['local_action']);
+                                    if ($hasLocal) {
+                                        $act = strtolower($order['local_action']['action'] ?? '');
+                                        if (strpos($act, 'process') !== false) {
+                                            echo '<span class="state-processing">MEMPROSES</span>';
+                                        } elseif (strpos($act, 'approv') !== false) {
+                                            echo '<span class="state-purchase">DISETUJUI</span>';
+                                        } elseif (strpos($act, 'reject') !== false) {
+                                            echo '<span class="state-cancel">DITOLAK</span>';
+                                        } elseif (strpos($act, 'deleted') !== false) {
+                                            echo '<span class="state-processing">DIHAPUS</span>';
+                                        } else {
+                                            echo '<span class="state-' . $order['state'] . '">' . strtoupper($order['state']) . '</span>';
+                                        }
+                                    } else {
+                                        echo '<span class="state-' . $order['state'] . '">' . strtoupper($order['state']) . '</span>';
+                                    }
+                                ?>
+                            </td>
+                            <td>
+                                <?php 
+                                    $hasLocal = !empty($order['local_action']);
+                                    if ($hasLocal) {
+                                        $act = strtolower($order['local_action']['action'] ?? '');
+                                        if (strpos($act, 'process') !== false) {
+                                            echo '<span style="color:#856404; font-weight:600;">⏳ Sedang memproses</span>';
+                                        } elseif (strpos($act, 'deleted') !== false) {
+                                            echo '-';
+                                        } elseif (strpos($act, 'approv') !== false || strpos($act, 'reject') !== false) {
+                                            // Already approved/rejected - locked, only show Hapus
+                                            echo '<button onclick="deletePO(' . $order['id'] . ')" style="padding: 6px 10px; background: #7f8c8d; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">🗑️ Hapus</button>';
+                                        } else {
+                                            echo '-';
+                                        }
+                                    } elseif ($order['state'] === 'draft') {
+                                        // Only show Setujui/Tolak for draft without local action
+                                        echo '<button onclick="approveInline(' . $order['id'] . ')" style="padding: 6px 10px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; margin-right:6px;">✅ Setujui</button>' .
+                                             '<button onclick="rejectInline(' . $order['id'] . ')" style="padding: 6px 10px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">❌ Tolak</button>';
+                                    } else {
+                                        echo '<span style="color: #7f8c8d;">-</span>';
+                                    }
+                                ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            <div id="pagination"></div>
+        <?php else: ?>
+            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <strong>⚠️ Belum Ada Purchase Order</strong>
+                <p style="margin: 10px 0 0 0;">Mulai dengan membuat purchase order pertama untuk memesan produk dari supplier.</p>
+            </div>
+        <?php endif; ?>
+        
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="/odoo-dashboard" style="color: #3498db; text-decoration: none;">← Kembali ke Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        (function(){
+            const openBtn = document.getElementById('openCreatePoModal');
+            const modal = document.getElementById('createPoModal');
+            const cancelBtn = document.getElementById('cancelPoModal');
+            const saveBtn = document.getElementById('savePoModal');
+            const msgBox = document.getElementById('poMsg');
+            const supplierSel = document.getElementById('modal_supplier');
+            const productSel = document.getElementById('modal_product');
+            const qtyInput = document.getElementById('modal_qty');
+            const priceInput = document.getElementById('modal_price');
+            const tableBody = document.getElementById('poTableBody');
+
+            function showModal(){ modal.style.display = 'flex'; modal.classList.add('show'); loadSuppliers(); loadProducts(); }
+            function closeModal(){ modal.classList.remove('show'); setTimeout(() => modal.style.display = 'none', 300); msgBox.innerHTML = ''; qtyInput.value = 1; priceInput.value = 0; supplierSel.innerHTML = ''; productSel.innerHTML = ''; }
+
+            if (openBtn) openBtn.addEventListener('click', showModal);
+            if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+            function loadSuppliers(){
+                fetch('/test-po-api.php?action=list_suppliers')
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            supplierSel.innerHTML = '<option value="">-- Pilih Supplier --</option>';
+                            data.data.forEach(s => {
+                                const o = document.createElement('option'); o.value = s.id; o.textContent = s.name + (s.phone ? (' - ' + s.phone) : ''); supplierSel.appendChild(o);
+                            });
+                        }
+                    }).catch(e => console.error(e));
+            }
+
+            function loadProducts(){
+                fetch('/test-po-api.php?action=list_products')
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success && data.data && data.data.length > 0) {
+                            productSel.innerHTML = '<option value="">-- Pilih Produk --</option>';
+                            data.data.forEach(p => {
+                                const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; o.dataset.price = p.price || 0; productSel.appendChild(o);
+                            });
+                        } else {
+                            productSel.innerHTML = '<option value="">-- Tidak ada produk --</option>';
+                            console.error('No products loaded:', data);
+                        }
+                    }).catch(e => {
+                        console.error('Error loading products:', e);
+                        productSel.innerHTML = '<option value="">-- Error loading produk --</option>';
+                    });
+            }
+
+            productSel.addEventListener('change', function(){
+                const opt = productSel.options[productSel.selectedIndex];
+                const price = opt ? parseFloat(opt.dataset.price) || 0 : 0; priceInput.value = price; 
+            });
+
+            saveBtn.addEventListener('click', function(){
+                const partnerId = supplierSel.value; const productId = productSel.value; const qty = qtyInput.value; const price = priceInput.value;
+                if (!partnerId) { msgBox.innerHTML = '<div class="error" style="padding:8px; border-radius:6px;">Pilih supplier terlebih dahulu</div>'; return; }
+                if (!productId) { msgBox.innerHTML = '<div class="error" style="padding:8px; border-radius:6px;">Pilih produk terlebih dahulu</div>'; return; }
+
+                msgBox.innerHTML = '<div style="background:#d1ecf1;color:#0c5460;padding:8px;border-radius:6px;">Menyimpan PO...</div>';
+
+                fetch('/test-po-api.php?action=create_po&supplier_id=' + partnerId + '&product_id=' + productId + '&quantity=' + qty + '&price=' + price)
+                    .then(r => r.json())
+                    .then(resp => {
+                        if (resp.success) {
+                            msgBox.innerHTML = '<div style="background:#d4edda;color:#155724;padding:8px;border-radius:6px;">PO berhasil dibuat: ' + (resp.order ? resp.order.name : 'ID ' + resp.id) + '</div>';
+                            // Add new row immediately if order data available
+                            if (resp.order && tableBody) {
+                                const order = resp.order;
+                                const partner = Array.isArray(order.partner_id) ? order.partner_id[1] : ('Partner #' + order.partner_id);
+                                const productName = productSel.options[productSel.selectedIndex] ? productSel.options[productSel.selectedIndex].textContent : 'Produk';
+                                const products = productName || '-';
+                                const date = order.date_order ? new Date(order.date_order).toLocaleDateString() : '';
+                                const amount = order.amount_total ? order.amount_total.toLocaleString('id-ID') : '0';
+                                const statusHtml = '<span class="state-draft">DRAFT</span>';
+                                const actionHtml = '<button onclick="approveInline(' + order.id + ')" style="padding: 6px 10px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; margin-right:6px;">✅ Setujui</button>' +
+                                    '<button onclick="rejectInline(' + order.id + ')" style="padding: 6px 10px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">❌ Tolak</button>';
+                                const rowHtml = '<tr><td><strong>' + (order.name || '') + '</strong></td><td>' + partner + '</td><td>' + products + '</td><td>' + date + '</td><td style="font-weight:600; color:#2c3e50;">Rp ' + amount + '</td><td>' + statusHtml + '</td><td>' + actionHtml + '</td></tr>';
+                                tableBody.insertAdjacentHTML('afterbegin', rowHtml);
+                            }
+                            // Refresh table via API to ensure consistency
+                            fetch('/test-po-api.php?action=list_pos')
+                                .then(r => r.json())
+                                .then(j => {
+                                    if (j.success) {
+                                        renderOrders(j.data);
+                                    }
+                                }).catch(e => {
+                                    // Ignore refresh error
+                                });
+                            closeModal(); // Close immediately
+                        } else {
+                            msgBox.innerHTML = '<div class="error" style="padding:8px; border-radius:6px;">Gagal: ' + (resp.error || 'Unknown') + '</div>';
+                        }
+                    }).catch(err => {
+                        msgBox.innerHTML = '<div class="error" style="padding:8px; border-radius:6px;">Error: ' + err.message + '</div>';
+                    });
+            });
+
+            let currentPage = 1;
+            const itemsPerPage = 10;
+            let allOrders = [];
+
+            function renderOrders(orders){
+                allOrders = orders || [];
+                renderPage(currentPage);
+            }
+
+            function renderPage(page){
+                if (!tableBody) return;
+                const start = (page - 1) * itemsPerPage;
+                const end = start + itemsPerPage;
+                const pageOrders = allOrders.slice(start, end);
+                let html = '';
+                pageOrders.forEach(order => {
+                    const partner = Array.isArray(order.partner_id) ? order.partner_id[1] : ('Partner #' + order.partner_id);
+                    const products = order.products ? order.products.join(', ') : '-';
+                    const date = order.date_order ? new Date(order.date_order).toLocaleDateString() : '';
+                    const amount = order.amount_total ? order.amount_total.toLocaleString('id-ID') : '0';
+                    
+                    // Determine action buttons based on state and local actions
+                    let hasLocal = !!(order.local_action);
+                    let actionHtml = '';
+                    if (hasLocal) {
+                        const act = (order.local_action.action || '').toString().toLowerCase();
+                        if (act.indexOf('process') !== -1) {
+                            actionHtml = '<td><span style="color:#856404; font-weight:600;">⏳ Sedang memproses</span></td>';
+                        } else if (act.indexOf('deleted') !== -1) {
+                            actionHtml = '<td>-</td>';
+                        } else if (act.indexOf('approv') !== -1 || act.indexOf('reject') !== -1) {
+                            // Already approved/rejected - locked, only show Hapus
+                            actionHtml = '<td><button onclick="deletePO(' + (order.id || 0) + ')" style="padding: 6px 10px; background: #7f8c8d; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">🗑️ Hapus</button></td>';
+                        } else {
+                            actionHtml = '<td>-</td>';
+                        }
+                    } else if ((order.state || '') === 'draft') {
+                        // Only show Setujui/Tolak for draft without local action
+                        actionHtml = '<td><button onclick="approveInline(' + (order.id || 0) + ')" style="padding: 6px 10px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; margin-right:6px;">✅ Setujui</button>' +
+                                '<button onclick="rejectInline(' + (order.id || 0) + ')" style="padding: 6px 10px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">❌ Tolak</button></td>';
+                    } else {
+                        actionHtml = '<td>-</td>';
+                    }
+                    
+                    let statusLabel = '';
+                    let statusClass = '';
+                    if (hasLocal) {
+                        const act = (order.local_action.action || '').toString().toLowerCase();
+                        if (act.indexOf('process') !== -1) {
+                            statusLabel = 'MEMPROSES';
+                            statusClass = 'state-processing';
+                        } else if (act.indexOf('approv') !== -1) {
+                            statusLabel = 'DISETUJUI';
+                            statusClass = 'state-purchase';
+                        } else if (act.indexOf('reject') !== -1) {
+                            statusLabel = 'DITOLAK';
+                            statusClass = 'state-cancel';
+                        } else if (act.indexOf('deleted') !== -1) {
+                            statusLabel = 'DIHAPUS';
+                            statusClass = 'state-processing';
+                        } else {
+                            statusLabel = (order.state||'').toUpperCase();
+                            statusClass = 'state-' + (order.state||'');
+                        }
+                    } else {
+                        statusLabel = (order.state||'').toUpperCase();
+                        statusClass = 'state-' + (order.state||'');
+                    }
+                    
+                    html += '<tr>' +
+                            '<td><strong>' + (order.name || '') + '</strong></td>' +
+                            '<td>' + partner + '</td>' +
+                            '<td>' + products + '</td>' +
+                            '<td>' + date + '</td>' +
+                            '<td style="font-weight:600; color:#2c3e50;">Rp ' + amount + '</td>' +
+                            '<td><span class="' + statusClass + '">' + statusLabel + '</span></td>' +
+                            actionHtml +
+                            '</tr>';
+                });
+                tableBody.innerHTML = html;
+                renderPagination();
+            }
+
+            function renderPagination(){
+                const totalPages = Math.ceil(allOrders.length / itemsPerPage);
+                let paginationHtml = '';
+                if (totalPages > 1) {
+                    paginationHtml = '<div style="margin-top: 20px; text-align: center;">';
+                    if (currentPage > 1) {
+                        paginationHtml += '<button onclick="changePage(' + (currentPage - 1) + ')" style="padding: 8px 12px; margin: 0 5px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">Previous</button>';
+                    }
+                    for (let i = 1; i <= totalPages; i++) {
+                        const active = i === currentPage ? 'background: #2980b9;' : '';
+                        paginationHtml += '<button onclick="changePage(' + i + ')" style="padding: 8px 12px; margin: 0 2px; background: #bdc3c7; color: white; border: none; border-radius: 4px; cursor: pointer; ' + active + '">' + i + '</button>';
+                    }
+                    if (currentPage < totalPages) {
+                        paginationHtml += '<button onclick="changePage(' + (currentPage + 1) + ')" style="padding: 8px 12px; margin: 0 5px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">Next</button>';
+                    }
+                    paginationHtml += '</div>';
+                }
+                // Assume there's a div with id 'pagination' after table
+                let paginationDiv = document.getElementById('pagination');
+                if (!paginationDiv) {
+                    paginationDiv = document.createElement('div');
+                    paginationDiv.id = 'pagination';
+                    tableBody.parentNode.parentNode.appendChild(paginationDiv);
+                }
+                paginationDiv.innerHTML = paginationHtml;
+            }
+
+            window.changePage = function(page){
+                currentPage = page;
+                renderPage(page);
+            }
+
+            // Detail Modal Functions (kept for compatibility)
+            window.viewPODetail = function(orderId) {
+                const modal = document.getElementById('detailPoModal');
+                const content = document.getElementById('detailContent');
+                const msg = document.getElementById('detailMsg');
+                msg.innerHTML = '<div style="background:#d1ecf1;color:#0c5460;padding:8px;border-radius:6px;">Memuat detail PO...</div>';
+                content.innerHTML = '';
+                modal.style.display = 'flex';
+
+                // Set order ID for approve/reject/delete buttons
+                document.getElementById('approvePO').dataset.orderId = orderId;
+                document.getElementById('rejectPO').dataset.orderId = orderId;
+                document.getElementById('deletePO').dataset.orderId = orderId;
+
+                fetch('/test-po-api.php?action=get_po_details&po_id=' + orderId)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success && data.po) {
+                            const order = data.po;
+                            const partner = Array.isArray(order.partner_id) ? order.partner_id[1] : 'Partner #' + order.partner_id;
+                            const date = order.date_order ? new Date(order.date_order).toLocaleDateString('id-ID') : '';
+                            const amount = order.amount_total ? order.amount_total.toLocaleString('id-ID') : '0';
+                            let html = '<div style="margin-bottom:20px;">' +
+                                '<strong>Nomor PO:</strong> ' + (order.name || '') + '<br>' +
+                                '<strong>Supplier:</strong> ' + partner + '<br>' +
+                                '<strong>Tanggal:</strong> ' + date + '<br>' +
+                                '<strong>Total:</strong> Rp ' + amount + '<br>' +
+                                '<strong>Status:</strong> <span class="state-' + (order.state || '') + '">' + ((order.state||'').toUpperCase()) + '</span>' +
+                                '</div>';
+                            if (data.lines && data.lines.length > 0) {
+                                html += '<h4>Detail Barang:</h4><table style="width:100%; border-collapse:collapse; margin-top:10px;">' +
+                                    '<thead><tr style="background:#f8f9fa;"><th style="padding:8px; border:1px solid #dee2e6;">Produk</th><th style="padding:8px; border:1px solid #dee2e6;">Qty</th><th style="padding:8px; border:1px solid #dee2e6;">Harga</th><th style="padding:8px; border:1px solid #dee2e6;">Subtotal</th></tr></thead><tbody>';
+                                data.lines.forEach(line => {
+                                    const prod = Array.isArray(line.product_id) ? line.product_id[1] : (line.name || 'Product');
+                                    const qty = line.product_qty || 0;
+                                    const price = line.price_unit ? line.price_unit.toLocaleString('id-ID') : '0';
+                                    const sub = line.price_subtotal ? line.price_subtotal.toLocaleString('id-ID') : '0';
+                                    html += '<tr><td style="padding:8px; border:1px solid #dee2e6;">' + prod + '</td><td style="padding:8px; border:1px solid #dee2e6;">' + qty + '</td><td style="padding:8px; border:1px solid #dee2e6;">Rp ' + price + '</td><td style="padding:8px; border:1px solid #dee2e6;">Rp ' + sub + '</td></tr>';
+                                });
+                                html += '</tbody></table>';
+                            }
+                            content.innerHTML = html;
+                            msg.innerHTML = '';
+
+                            // Show/hide approve/reject buttons based on state and local fallback
+                            const approveBtn = document.getElementById('approvePO');
+                            const rejectBtn = document.getElementById('rejectPO');
+                            const deleteBtn = document.getElementById('deletePO');
+                            const fallback = data.local_action || null;
+                            if (fallback) {
+                                approveBtn.style.display = 'none';
+                                rejectBtn.style.display = 'none';
+                                if ((fallback.action || '').toString().toLowerCase().indexOf('deleted') !== -1) {
+                                    deleteBtn.style.display = 'none';
+                                    msg.innerHTML = '<div style="background:#fff3cd;color:#856404;padding:8px;border-radius:6px;">PO telah dihapus secara lokal.</div>';
+                                } else if ((fallback.action || '').toString().toLowerCase().indexOf('process') !== -1) {
+                                    deleteBtn.style.display = 'none';
+                                    msg.innerHTML = '<div style="background:#fff3cd;color:#856404;padding:8px;border-radius:6px;">Tindakan sedang diproses. Silakan tunggu...</div>';
+                                } else {
+                                    deleteBtn.style.display = 'inline-block';
+                                    msg.innerHTML = '<div style="background:#fff3cd;color:#856404;padding:8px;border-radius:6px;">Tindakan sudah dicatat secara lokal: <strong>' + fallback.action + '</strong><br><small>' + (fallback.error || '') + '</small></div>';
+                                }
+                            } else if ((data.po && data.po.state) === 'draft') {
+                                approveBtn.style.display = 'inline-block';
+                                rejectBtn.style.display = 'inline-block';
+                                deleteBtn.style.display = 'none';
+                            } else {
+                                approveBtn.style.display = 'none';
+                                rejectBtn.style.display = 'none';
+                                deleteBtn.style.display = 'none';
+                            }
+                        } else {
+                            msg.innerHTML = '<div class="error" style="padding:8px; border-radius:6px;">Gagal memuat detail: ' + (data.error || 'Unknown') + '</div>';
+                        }
+                    }).catch(e => {
+                        msg.innerHTML = '<div class="error" style="padding:8px; border-radius:6px;">Error: ' + e.message + '</div>';
+                    });
+            };
+
+            document.getElementById('closePODetail').addEventListener('click', function() {
+                document.getElementById('detailPoModal').style.display = 'none';
+            });
+
+            // Delete PO (tries Odoo unlink, else removes local fallback)
+            document.getElementById('deletePO').addEventListener('click', function() {
+                const orderId = this.dataset.orderId;
+                if (!orderId) return;
+                if (!confirm('Hapus PO ini? (akan menghapus dari Odoo jika bisa, jika tidak akan menghapus catatan lokal)')) return;
+                document.getElementById('detailMsg').innerHTML = '<div style="background:#f8d7da;color:#721c24;padding:8px;border-radius:6px;">Menghapus...</div>';
+                fetch('/test-po-api.php?action=delete_po&po_id=' + orderId)
+                    .then(r => r.json())
+                    .then(resp => {
+                        if (resp.success) {
+                            document.getElementById('detailMsg').innerHTML = '<div style="background:#d4edda;color:#155724;padding:8px;border-radius:6px;">' + (resp.message || 'Berhasil dihapus') + '</div>';
+                            fetch('/test-po-api.php?action=list_pos')
+                                .then(r => r.json())
+                                .then(j => { if (j.success) renderOrders(j.data); });
+                            setTimeout(() => document.getElementById('detailPoModal').style.display = 'none', 1200);
+                        } else {
+                            document.getElementById('detailMsg').innerHTML = '<div class="error" style="padding:8px; border-radius:6px;">Gagal menghapus: ' + (resp.error || 'Unknown') + '</div>';
+                        }
+                    }).catch(e => {
+                        document.getElementById('detailMsg').innerHTML = '<div class="error" style="padding:8px; border-radius:6px;">Error: ' + e.message + '</div>';
+                    });
+            });
+
+            document.getElementById('approvePO').addEventListener('click', function() {
+                const orderId = this.dataset.orderId;
+                if (!orderId) return;
+                if (!confirm('Apakah Anda yakin ingin menyetujui PO ini?')) return;
+                this.disabled = true;
+                document.getElementById('detailMsg').innerHTML = '<div style="background:#d1ecf1;color:#0c5460;padding:8px;border-radius:6px;">Menyetujui PO...</div>';
+                fetch('/test-po-api.php?action=approve_po&po_id=' + orderId)
+                    .then(r => r.json())
+                    .then(resp => {
+                        this.disabled = false;
+                        if (resp.success) {
+                            document.getElementById('detailMsg').innerHTML = '<div style="background:#d4edda;color:#155724;padding:8px;border-radius:6px;">PO berhasil disetujui!</div>';
+                            // Refresh table
+                            fetch('/test-po-api.php?action=list_pos')
+                                .then(r => r.json())
+                                .then(j => {
+                                    if (j.success) {
+                                        renderOrders(j.data);
+                                    }
+                                });
+                            setTimeout(() => document.getElementById('detailPoModal').style.display = 'none', 1500);
+                        } else {
+                            // If fallback provided show message and refresh list so inline actions update
+                            if (resp.fallback) {
+                                document.getElementById('detailMsg').innerHTML = '<div style="background:#fff3cd;color:#856404;padding:8px;border-radius:6px;">Aksi tidak dapat diselesaikan di Odoo. Tindakan dicatat secara lokal: <strong>' + resp.fallback.action + '</strong></div>';
+                                document.getElementById('approvePO').style.display = 'none';
+                                document.getElementById('rejectPO').style.display = 'none';
+                                fetch('/test-po-api.php?action=list_pos')
+                                    .then(r => r.json())
+                                    .then(j => { if (j.success) renderOrders(j.data); });
+                            } else {
+                                document.getElementById('detailMsg').innerHTML = '<div class="error" style="padding:8px; border-radius:6px;">Gagal menyetujui: ' + (resp.error || 'Unknown') + '</div>';
+                            }
+                        }
+                    }).catch(e => {
+                        this.disabled = false;
+                        document.getElementById('detailMsg').innerHTML = '<div class="error" style="padding:8px; border-radius:6px;">Error: ' + e.message + '</div>';
+                    });
+            });
+
+            // INLINE actions (approve/reject/delete) directly from table
+            window.approveInline = function(orderId) {
+                if (!confirm('Setujui PO #' + orderId + ' ?')) return;
+                // optimistic UI: disable button, keep status as draft
+                try {
+                    const b = document.querySelector('button[onclick="approveInline(' + orderId + ')"]');
+                    if (b) { b.disabled = true; b.style.opacity = 0.6; b.innerHTML = '⏳ Memproses...'; }
+                    // Do not change status here, keep as draft
+                } catch (err) {}
+
+                fetch('/test-po-api.php?action=approve_po&po_id=' + orderId)
+                    .then(r => r.json())
+                    .then(resp => {
+                        // Update to final state on success
+                        const tr = document.querySelector('tr:has(button[onclick="approveInline(' + orderId + ')"])');
+                        if (tr) {
+                            const s = tr.querySelector('span[class^="state-"]');
+                            if (s) { s.textContent = 'DISETUJUI'; s.className = 'state-purchase'; s.style.background = ''; s.style.color = ''; }
+                        }
+                        // Refresh final state
+                        fetch('/test-po-api.php?action=list_pos')
+                            .then(r => r.json())
+                            .then(j => { if (j.success) renderOrders(j.data); });
+                    }).catch(e => {
+                        // ignore
+                    });
+            }
+
+            window.rejectInline = function(orderId) {
+                if (!confirm('Tolak PO #' + orderId + ' ?')) return;
+                try {
+                    const b = document.querySelector('button[onclick="rejectInline(' + orderId + ')"]');
+                    if (b) { b.disabled = true; b.style.opacity = 0.6; b.innerHTML = '⏳ Memproses...'; }
+                    // Do not change status here, keep as draft
+                } catch (err) {}
+
+                fetch('/test-po-api.php?action=reject_po&po_id=' + orderId)
+                    .then(r => r.json())
+                    .then(resp => {
+                        // Update to final state on success
+                        const tr = document.querySelector('tr:has(button[onclick="rejectInline(' + orderId + ')"])');
+                        if (tr) {
+                            const s = tr.querySelector('span[class^="state-"]');
+                            if (s) { s.textContent = 'DITOLAK'; s.className = 'state-cancel'; s.style.background = ''; s.style.color = ''; }
+                        }
+                        fetch('/test-po-api.php?action=list_pos')
+                            .then(r => r.json())
+                            .then(j => { if (j.success) renderOrders(j.data); });
+                    }).catch(e => {});
+            }
+
+            window.deletePO = function(orderId) {
+                if (!confirm('Hapus catatan untuk PO #' + orderId + ' ?')) return;
+                try {
+                    const b = document.querySelector('button[onclick="deletePO(' + orderId + ')"]');
+                    if (b) { b.disabled = true; b.style.opacity = 0.6; b.innerHTML = '⏳ Menghapus...'; }
+                    // Do not change status here, keep as draft
+                } catch (err) {}
+                fetch('/test-po-api.php?action=delete_po&po_id=' + orderId)
+                    .then(r => r.json())
+                    .then(resp => {
+                        // Update to final state on success
+                        const tr = document.querySelector('tr:has(button[onclick="deletePO(' + orderId + ')"])');
+                        if (tr) {
+                            const s = tr.querySelector('span[class^="state-"]');
+                            if (s) { s.textContent = 'DIHAPUS'; s.className = 'state-processing'; s.style.background = ''; s.style.color = ''; }
+                        }
+                        fetch('/test-po-api.php?action=list_pos')
+                            .then(r => r.json())
+                            .then(j => { if (j.success) renderOrders(j.data); });
+                    }).catch(e => {});
+            }
+
+            document.getElementById('rejectPO').addEventListener('click', function() {
+                const orderId = this.dataset.orderId;
+                if (!orderId) return;
+                if (!confirm('Apakah Anda yakin ingin menolak PO ini?')) return;
+                this.disabled = true;
+                document.getElementById('detailMsg').innerHTML = '<div style="background:#d1ecf1;color:#0c5460;padding:8px;border-radius:6px;">Menolak PO...</div>';
+                fetch('/test-po-api.php?action=reject_po&po_id=' + orderId)
+                    .then(r => r.json())
+                    .then(resp => {
+                        this.disabled = false;
+                        if (resp.success) {
+                            document.getElementById('detailMsg').innerHTML = '<div style="background:#d4edda;color:#155724;padding:8px;border-radius:6px;">PO berhasil ditolak!</div>';
+                            // Refresh table
+                            fetch('/test-po-api.php?action=list_pos')
+                                .then(r => r.json())
+                                .then(j => {
+                                    if (j.success) {
+                                        renderOrders(j.data);
+                                    }
+                                });
+                            setTimeout(() => document.getElementById('detailPoModal').style.display = 'none', 1500);
+                        } else {
+                            if (resp.fallback) {
+                                document.getElementById('detailMsg').innerHTML = '<div style="background:#fff3cd;color:#856404;padding:8px;border-radius:6px;">Aksi tidak dapat diselesaikan di Odoo. Tindakan dicatat secara lokal: <strong>' + resp.fallback.action + '</strong></div>';
+                                document.getElementById('approvePO').style.display = 'none';
+                                document.getElementById('rejectPO').style.display = 'none';
+                                fetch('/test-po-api.php?action=list_pos')
+                                    .then(r => r.json())
+                                    .then(j => { if (j.success) renderOrders(j.data); });
+                            } else {
+                                document.getElementById('detailMsg').innerHTML = '<div class="error" style="padding:8px; border-radius:6px;">Gagal menolak: ' + (resp.error || 'Unknown') + '</div>';
+                            }
+                        }
+                    }).catch(e => {
+                        this.disabled = false;
+                        document.getElementById('detailMsg').innerHTML = '<div class="error" style="padding:8px; border-radius:6px;">Error: ' + e.message + '</div>';
+                    });
+            });
+
+            // Load orders on page load to enable pagination
+            function loadOrders(){
+                fetch('/test-po-api.php?action=list_pos')
+                    .then(r => r.json())
+                    .then(j => {
+                        if (j.success) {
+                            renderOrders(j.data);
+                        }
+                    }).catch(e => console.error('Error loading orders:', e));
+            }
+
+            // Load orders on page load
+            loadOrders();
+
+        })();
+    </script>
+</body>
+</html>

@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Controllers;
+
 use App\Library\OdooClient;
 
 class OdooInvoicingController extends OdooControllerBase
@@ -10,13 +12,24 @@ class OdooInvoicingController extends OdooControllerBase
     public function indexAction()
     {
         try {
+            // Optional partner filter via query param
+            $partnerId = (int)$this->request->getQuery('partner_id');
+            // Allow both in_invoice (vendor bill) and out_invoice (customer invoice)
+            $domain = [['move_type', 'in', ['out_invoice', 'in_invoice']]];
+            
+            if ($partnerId) {
+                // If partner provided, strict filter
+                $domain[] = ['partner_id', '=', $partnerId];
+            }
+
             $invoices = $this->odoo->executePublic('account.move', 'search_read',
-                [[['move_type', '=', 'out_invoice']]], // args: domain
-                ['fields' => ['name', 'partner_id', 'invoice_date', 'amount_total', 'state']] // kwargs
+                [$domain], // args: domain
+                ['fields' => ['name', 'partner_id', 'invoice_date', 'amount_total', 'state', 'move_type']] // kwargs
             );
             
             $this->view->invoices = $invoices ?: [];
             $this->view->title = "Invoices";
+            $this->view->filter_partner = $partnerId ?: null;
         } catch (\Exception $e) {
             $this->flash->error("Error: " . $e->getMessage());
             $this->view->invoices = [];
@@ -34,31 +47,50 @@ class OdooInvoicingController extends OdooControllerBase
                 $productId = $this->request->getPost('product_id');
                 $quantity = (float)$this->request->getPost('quantity');
                 $price = (float)$this->request->getPost('price');
+                $productName = $this->request->getPost('product_name') ?: 'Product';
                 
-                // Create Invoice header
+                // Fetch product name if not provided
+                if ($productId && $productName === 'Product') {
+                    $prodData = $this->odoo->executePublic('product.product', 'read', [[(int)$productId], ['name']]);
+                    if (!empty($prodData)) $productName = $prodData[0]['name'];
+                }
+                
+                // Create Invoice with Atomic Line (Odoo 13+ standard)
                 $invoiceData = [
                     'partner_id' => $partnerId,
                     'move_type' => 'out_invoice',
-                    'invoice_date' => date('Y-m-d')
+                    'invoice_date' => date('Y-m-d'),
+                    'invoice_line_ids' => [
+                        [0, 0, [
+                            'product_id' => $productId ? (int)$productId : null,
+                            'quantity' => $quantity,
+                            'price_unit' => $price,
+                            'name' => $productName
+                        ]]
+                    ]
                 ];
                 
-                $invoiceId = $this->odoo->executePublic('account.move', 'create', [[$invoiceData]]);
+                $invoiceId = $this->odoo->executePublic('account.move', 'create', [$invoiceData]);
                 
-                if ($invoiceId && $productId) {
-                    // Create Invoice Line
-                    $lineData = [
-                        'move_id' => $invoiceId,
-                        'product_id' => (int)$productId,
-                        'quantity' => $quantity,
-                        'price_unit' => $price,
-                        'name' => $this->request->getPost('product_name') ?: 'Product'
-                    ];
-                    
-                    $this->odoo->executePublic('account.move.line', 'create', [[$lineData]]);
+                if (is_array($invoiceId)) $invoiceId = $invoiceId[0];
+                
+                // Optionally post the invoice immediately
+                $posted = false;
+                $postNow = (bool)$this->request->getPost('post_now');
+                if ($postNow && $invoiceId) {
+                    try {
+                        $this->odoo->executePublic('account.move', 'action_post', [[$invoiceId]]);
+                        $posted = true;
+                    } catch (\Exception $e) {
+                        // posting failed, but invoice exists in draft
+                        $this->flash->warning("Invoice dibuat (ID: $invoiceId) tetapi gagal dipost: " . $e->getMessage());
+                        return $this->response->redirect('odoo-invoicing');
+                    }
                 }
                 
                 if ($invoiceId) {
-                    $this->flash->success("Invoice berhasil dibuat dengan ID: $invoiceId");
+                    $msg = "Invoice berhasil dibuat dengan ID: $invoiceId" . ($posted ? ' (posted)' : ' (draft)');
+                    $this->flash->success($msg);
                     return $this->response->redirect('odoo-invoicing');
                 }
             } catch (\Exception $e) {
@@ -101,20 +133,35 @@ class OdooInvoicingController extends OdooControllerBase
         }
         
         try {
+            // 1. Fetch Invoice Header and Line IDs
             $invoice = $this->odoo->executePublic('account.move', 'read', [
                 [$id],
-                ['name', 'partner_id', 'invoice_date', 'amount_total', 'state']
+                ['name', 'partner_id', 'invoice_date', 'invoice_date_due', 'amount_total', 'state', 'invoice_line_ids', 'move_type']
             ]);
             
             if (!empty($invoice)) {
-                $this->view->invoice = $invoice[0];
-                $this->view->title = "Invoice Detail";
+                $invData = $invoice[0];
+                
+                // 2. Fetch Invoice Lines Details
+                $lineIds = $invData['invoice_line_ids'];
+                $lines = [];
+                if (!empty($lineIds)) {
+                    $lines = $this->odoo->executePublic('account.move.line', 'read', [
+                        $lineIds,
+                        ['product_id', 'name', 'quantity', 'price_unit', 'price_subtotal']
+                    ]);
+                }
+                
+                $invData['lines'] = $lines;
+                
+                $this->view->invoice = $invData;
+                $this->view->title = "Invoice " . $invData['name'];
             } else {
                 $this->flash->error("Invoice not found");
                 return $this->response->redirect('odoo-invoicing');
             }
         } catch (\Exception $e) {
-            $this->flash->error("Error: " . $e->getMessage());
+            $this->flash->error("Error loading invoice: " . $e->getMessage());
             return $this->response->redirect('odoo-invoicing');
         }
     }

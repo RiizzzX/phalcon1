@@ -1,0 +1,49 @@
+<div class="container mt-4">
+    <h1>📊 Adjust Stock</h1>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5>{{ inventory.name }}</h5>
+            <p>
+                <strong>Current Stock:</strong> 
+                <span style="font-size: 1.5em; color: {% if inventory.quantity == 0 %}red{% elseif inventory.quantity < 5 %}orange{% else %}green{% endif %}">
+                    {{ inventory.quantity }} units
+                </span>
+            </p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" action="/inventory/updatestock/{{ inventory.id }}">
+                <div class="mb-3">
+                    <label class="form-label">New Quantity *</label>
+                    <input type="number" name="quantity" class="form-control" value="{{ inventory.quantity }}" min="0" required>
+                    <small class="text-muted">Enter the new total quantity (not increment/decrement)</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Reason for Adjustment</label>
+                    <select name="reason" class="form-control">
+                        <option value="Manual adjustment">Manual adjustment</option>
+                        <option value="Stock check">Stock check</option>
+                        <option value="Damage/Loss">Damage/Loss</option>
+                        <option value="Return">Return</option>
+                        <option value="Inventory correction">Inventory correction</option>
+                    </select>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success">Update Stock</button>
+                    <a href="/inventory/list" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.container {
+    max-width: 600px;
+}
+</style>

@@ -2,97 +2,134 @@
 <html>
 <head>
     <title><?= $title ?? 'Edit Produk' ?></title>
-    <link rel="stylesheet" href="/css/style.css">
     <style>
-        .container { max-width: 900px; margin: 20px auto; padding: 20px; }
-        .btn { padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 5px; border: none; cursor: pointer; font-weight: 600; transition: all 0.3s; }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        .btn-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; margin: 0; padding: 0; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; margin-bottom: 30px; }
+        .header h1 { margin: 0 0 10px 0; font-size: 2rem; }
+        .alert { padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+        .form-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; color: #333; margin-bottom: 8px; }
+        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: #667eea; box-shadow: 0 0 5px rgba(102, 126, 234, 0.3); }
+        .btn { padding: 10px 20px; border-radius: 4px; text-decoration: none; font-weight: bold; border: none; cursor: pointer; margin-right: 10px; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-primary:hover { background: #0056b3; }
         .btn-secondary { background: #6c757d; color: white; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; }
-        .form-section { background: white; padding: 25px; border-radius: 12px; margin: 20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .form-group { margin: 20px 0; }
-        .form-group label { display: block; font-weight: 600; margin-bottom: 8px; color: #2c3e50; font-size: 14px; }
-        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; box-sizing: border-box; font-size: 14px; transition: border 0.3s; }
-        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #667eea; }
-        .form-group textarea { resize: vertical; min-height: 100px; }
-        .required { color: #e74c3c; }
+        .btn-secondary:hover { background: #5a6268; }
+        .form-section { margin-bottom: 30px; }
+        .form-section h3 { color: #667eea; margin-bottom: 20px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .form-row { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
-    <?= $this->getContent() ?>
-    
-    <div class="container">
-        <div class="header">
-            <h1 style="margin: 0 0 10px 0;">✏️ <?= $title ?? 'Edit Produk' ?></h1>
-            <p style="margin: 0; opacity: 0.9;">Update informasi produk</p>
-        </div>
+<div class="container">
+    <div class="header">
+        <h1>✏️ Edit Produk</h1>
+        <p style="margin: 0; opacity: 0.9;">Update informasi dan stok produk</p>
+    </div>
 
-        <?php if (isset($product)): ?>
-            <form method="POST" action="/odoo-inventory/edit/<?= $product['id'] ?>">
+    <?php if ($this->flashSession->has('success')): ?>
+        <div class="alert alert-success">
+            <?php echo $this->flashSession->output(); ?>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($this->flashSession->has('error')): ?>
+        <div class="alert alert-error">
+            <?php echo $this->flashSession->output(); ?>
+        </div>
+    <?php endif; ?>
+
+    <?php if (isset($product)): ?>
+        <div class="form-container">
+            <form method="POST" action="<?php echo $this->url->get('odoo-inventory/edit/' . $product->id); ?>">
                 <div class="form-section">
-                    <h3 style="margin: 0 0 20px 0; color: #2c3e50;">📦 Informasi Produk</h3>
+                    <h3>📦 Informasi Dasar</h3>
                     
                     <div class="form-group">
-                        <label>Nama Produk <span class="required">*</span></label>
-                        <input type="text" name="name" value="<?= htmlspecialchars($product['name']) ?>" required>
+                        <label for="name">Nama Produk *</label>
+                        <input type="text" id="name" name="name" value="<?= htmlspecialchars($product->name) ?>" required>
                     </div>
-                    
+
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Kode Produk</label>
-                            <input type="text" name="code" value="<?= htmlspecialchars($product['default_code'] ?? '') ?>" placeholder="SKU-001">
+                            <label for="code">SKU / Kode</label>
+                            <input type="text" id="code" name="code" value="<?= htmlspecialchars($product->sku ?? '') ?>">
                         </div>
-                        
                         <div class="form-group">
-                            <label>Barcode</label>
-                            <input type="text" name="barcode" value="<?= htmlspecialchars($product['barcode'] ?? '') ?>" placeholder="1234567890123">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Tipe Produk <span class="required">*</span></label>
-                        <select name="type" required>
-                            <option value="product" <?= ($product['type'] ?? 'product') == 'product' ? 'selected' : '' ?>>Barang Stok</option>
-                            <option value="consu" <?= ($product['type'] ?? '') == 'consu' ? 'selected' : '' ?>>Consumable</option>
-                            <option value="service" <?= ($product['type'] ?? '') == 'service' ? 'selected' : '' ?>>Jasa</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Deskripsi</label>
-                        <textarea name="description" placeholder="Deskripsi produk..."><?= htmlspecialchars($product['description'] ?? '') ?></textarea>
-                    </div>
-                </div>
-                
-                <div class="form-section">
-                    <h3 style="margin: 0 0 20px 0; color: #2c3e50;">💰 Harga</h3>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Harga Jual <span class="required">*</span></label>
-                            <input type="number" name="price" value="<?= $product['list_price'] ?? 0 ?>" step="0.01" min="0" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Harga Beli <span class="required">*</span></label>
-                            <input type="number" name="cost" value="<?= $product['standard_price'] ?? 0 ?>" step="0.01" min="0" required>
+                            <label for="category">Kategori *</label>
+                            <select id="category" name="category" required>
+                                <option value="">- Select Category -</option>
+                                <?php foreach ($categories as $cat): ?>
+                                    <option value="<?= $cat->name ?>" 
+                                        <?php if ($product->category == $cat->name) echo 'selected'; ?>>
+                                        <?= $cat->name ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                     </div>
                 </div>
-                
-                <div style="margin-top: 30px; text-align: center;">
-                    <button type="submit" class="btn btn-success" style="font-size: 16px;">✅ Simpan Perubahan</button>
-                    <a href="/odoo-inventory/view/<?= $product['id'] ?>" class="btn btn-secondary">← Batal</a>
+
+                <div class="form-section">
+                    <h3>💰 Harga</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="selling_price">Harga Jual *</label>
+                            <input type="number" id="selling_price" name="selling_price" value="<?= $product->selling_price ?? 0 ?>" step="0.01" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cost_price">Harga Pokok</label>
+                            <input type="number" id="cost_price" name="cost_price" value="<?= $product->cost_price ?? 0 ?>" step="0.01" min="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>📊 Stok</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="quantity">Stok Saat Ini</label>
+                            <input type="number" id="quantity" name="quantity" value="<?= $product->quantity ?? 0 ?>" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="product_type">Tipe Produk</label>
+                            <select id="product_type" name="product_type">
+                                <option value="consu" <?= $product->product_type == 'consu' ? 'selected' : '' ?>>Consumable</option>
+                                <option value="product" <?= $product->product_type == 'product' ? 'selected' : '' ?>>Product</option>
+                                <option value="service" <?= $product->product_type == 'service' ? 'selected' : '' ?>>Service</option>
+                                <option value="combo" <?= $product->product_type == 'combo' ? 'selected' : '' ?>>Combo</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>📝 Deskripsi</h3>
+                    <div class="form-group">
+                        <label for="description">Deskripsi Produk</label>
+                        <textarea id="description" name="description" rows="4"><?= htmlspecialchars($product->description ?? '') ?></textarea>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <button type="submit" class="btn btn-primary">💾 Simpan Perubahan</button>
+                    <a href="<?php echo $this->url->get('odoo-inventory'); ?>" class="btn btn-secondary">❌ Batal</a>
                 </div>
             </form>
-        <?php else: ?>
-            <div style="background: #f8f9fa; padding: 30px; text-align: center; border-radius: 12px;">
-                <h3>Produk tidak ditemukan</h3>
-                <a href="/odoo-inventory" class="btn btn-secondary">← Kembali ke Inventory</a>
-            </div>
-        <?php endif; ?>
-    </div>
+        </div>
+    <?php else: ?>
+        <div class="alert alert-error">
+            ❌ Produk tidak ditemukan
+        </div>
+        <a href="<?php echo $this->url->get('odoo-inventory'); ?>" class="btn btn-secondary">← Kembali ke Inventory</a>
+    <?php endif; ?>
+</div>
 </body>
 </html>

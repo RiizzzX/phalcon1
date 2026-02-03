@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
+namespace App\Controllers;
 
-use Phalcon\Mvc\Controller;
 use App\Models\Inventory;
 
-class IndexController extends Controller
+class IndexController extends ControllerBase
 {
     public function indexAction()
     {
@@ -32,7 +32,7 @@ class IndexController extends Controller
             $item->description = $this->request->getPost('description');
             $item->quantity = (int)$this->request->getPost('quantity');
             $item->category = $this->request->getPost('category');
-            $item->price = (float)$this->request->getPost('price');
+            $item->selling_price = (float)$this->request->getPost('selling_price');
 
             if ($item->save()) {
                 $this->flash->success('Barang berhasil ditambahkan');
@@ -58,7 +58,7 @@ class IndexController extends Controller
             $item->description = $this->request->getPost('description');
             $item->quantity = (int)$this->request->getPost('quantity');
             $item->category = $this->request->getPost('category');
-            $item->price = (float)$this->request->getPost('price');
+            $item->selling_price = (float)$this->request->getPost('selling_price');
 
             if ($item->save()) {
                 $this->flash->success('Barang berhasil diupdate');
@@ -177,37 +177,119 @@ class IndexController extends Controller
     public function getStatsAction()
     {
         $this->view->disable();
+        try {
+            // Total items
+            $totalItems = Inventory::count();
 
-        // Total items
-        $totalItems = Inventory::count();
+            // Total categories (unique categories)
+            $categories = Inventory::find([
+                'columns' => 'DISTINCT category'
+            ]);
+            $totalCategories = count($categories);
 
-        // Total categories (unique categories)
-        $categories = Inventory::find([
-            'columns' => 'DISTINCT category'
-        ]);
-        $totalCategories = count($categories);
+            // Low stock items (quantity <= 5)
+            $lowStock = Inventory::count([
+                'conditions' => 'quantity <= 5'
+            ]);
 
-        // Low stock items (quantity <= 5)
-        $lowStock = Inventory::count([
-            'conditions' => 'quantity <= 5'
-        ]);
+            // Total value (sum of selling_price * quantity)
+            $totalValue = 0;
+            $items = Inventory::find();
+            foreach ($items as $item) {
+                $totalValue += ($item->selling_price ?? 0) * ($item->quantity ?? 0);
+            }
 
-        // Total value (sum of price * quantity)
-        $totalValue = 0;
-        $items = Inventory::find();
-        foreach ($items as $item) {
-            $totalValue += $item->price * $item->quantity;
+            $stats = [
+                'total_items' => $totalItems,
+                'total_categories' => $totalCategories,
+                'low_stock' => $lowStock,
+                'total_value' => $totalValue
+            ];
+
+            $this->response->setJsonContent($stats);
+            $this->response->setContentType('application/json', 'UTF-8');
+            return $this->response;
+        } catch (\Throwable $e) {
+            $this->response->setStatusCode(500, 'Internal Server Error');
+            $this->response->setJsonContent([
+                'error' => true,
+                'message' => $e->getMessage()
+            ]);
+            $this->response->setContentType('application/json', 'UTF-8');
+            return $this->response;
+        }
+    }
+
+    // Fallback JSON endpoint for AJAX product creation when Odoo controller is unavailable
+    public function odooCreateProductAction()
+    {
+        error_log('DEBUG: odooCreateProductAction called');
+        $this->view->disable();
+        // ensure POST parsing works for both form-urlencoded and raw JSON
+        $input = $this->request->getRawBody();
+        if ($input && $this->request->getContentType() === 'application/json') {
+            $data = json_decode($input, true);
+            foreach ($data as $k => $v) {
+                $_POST[$k] = $v; // make accessible via getPost
+            }
+        }
+        if (!$this->request->isPost()) {
+            $this->response->setStatusCode(400);
+            $this->response->setJsonContent(['success' => false, 'message' => 'Invalid request']);
+            return $this->response;
         }
 
-        $stats = [
-            'total_items' => $totalItems,
-            'total_categories' => $totalCategories,
-            'low_stock' => $lowStock,
-            'total_value' => $totalValue
-        ];
+        try {
+            $name = $this->request->getPost('name');
+            $category = $this->request->getPost('category');
+            $selling = (float)($this->request->getPost('selling_price') ?? 0);
+            $cost = (float)($this->request->getPost('cost_price') ?? 0);
+            $sku = $this->request->getPost('sku');
 
-        $this->response->setJsonContent($stats);
-        $this->response->setContentType('application/json', 'UTF-8');
+            if (!$name || !$category) {
+                $this->response->setJsonContent(['success' => false, 'message' => 'Missing fields']);
+                return $this->response;
+            }
+
+            $product = new Inventory();
+            $product->name = $name;
+            $product->category = $category;
+            $product->selling_price = $selling;
+            $product->cost_price = $cost;
+            $product->sku = $sku;
+            $product->quantity = (int)($this->request->getPost('quantity') ?? 0);
+            $product->status = 'active';
+            $product->synced_to_odoo = 0;
+
+            if ($product->save()) {
+                $this->response->setJsonContent(['success' => true, 'message' => 'Product created', 'id' => $product->id]);
+            } else {
+                $msgs = [];
+                foreach ($product->getMessages() as $m) $msgs[] = (string)$m;
+                $this->response->setJsonContent(['success' => false, 'message' => implode('; ', $msgs)]);
+            }
+        } catch (\Throwable $e) {
+            $this->response->setStatusCode(500);
+            $this->response->setJsonContent(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        return $this->response;
+    }
+
+    // Debug helper: show all registered routes (pattern and name)
+    public function debugRoutesAction()
+    {
+        $this->view->disable();
+        $router = $this->getDI()->getRouter();
+        $routes = [];
+        foreach ($router->getRoutes() as $r) {
+            $routes[] = [
+                'pattern' => $r->getPattern(),
+                'name' => $r->getName(),
+                'paths' => $r->getPaths()
+            ];
+        }
+        $this->response->setJsonContent($routes);
         return $this->response;
     }
 }

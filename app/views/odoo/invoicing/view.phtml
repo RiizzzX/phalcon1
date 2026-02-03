@@ -1,0 +1,170 @@
+<?= $this->getContent() ?>
+
+<?php
+$inv = $invoice ?? [];
+// Helper to safely get value
+function getVal($arr, $key, $default='-') {
+    return isset($arr[$key]) ? (is_array($arr[$key]) ? $arr[$key][1] : $arr[$key]) : $default;
+}
+$stateColors = ['draft'=>'#95a5a6', 'posted'=>'#27ae60', 'cancel'=>'#e74c3c'];
+$stateColor = $stateColors[$inv['state']??'draft'] ?? '#95a5a6';
+?>
+
+<div class="container" style="padding: 40px 20px;">
+    <!-- Breadcrumb -->
+    <div style="margin-bottom: 20px;">
+        <a href="/odoo-dashboard" style="text-decoration:none; color:#3498db;">📊 Dashboard</a> / 
+        <a href="/odoo-invoicing" style="text-decoration:none; color:#3498db;">Invoices</a> / 
+        <span style="color:#7f8c8d;"><?= $inv['name'] ?? 'New' ?></span>
+    </div>
+
+    <!-- Header Actions -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h1 style="margin:0; color:#2c3e50;">🧾 <?= $inv['name'] ?? 'Invoice' ?></h1>
+        <div style="display:flex; gap:10px;">
+            <?php if(($inv['state']??'') === 'posted'): ?>
+                <button id="btnRegisterPayment" class="btn btn-success" style="background:#27ae60; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer;">
+                    💳 Register Payment
+                </button>
+            <?php elseif(($inv['state']??'') === 'draft'): ?>
+                <button id="btnPost" class="btn btn-primary" style="background:#3498db; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer;">
+                    ✅ Post Invoice
+                </button>
+            <?php endif; ?>
+            <a href="/odoo-invoicing" class="btn" style="background:#ecf0f1; color:#2c3e50; padding:10px 20px; border-radius:6px; text-decoration:none;">Back</a>
+        </div>
+    </div>
+
+    <!-- Main Card -->
+    <div style="background:white; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.08); overflow:hidden;">
+        <!-- Status Banner -->
+        <div style="background:<?= $stateColor ?>; color:white; padding:15px 30px; font-weight:bold; letter-spacing:1px; text-transform:uppercase;">
+            Status: <?= $inv['state'] ?? 'Unknown' ?>
+        </div>
+
+        <div style="padding:30px;">
+            <!-- Info Grid -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:40px; margin-bottom:40px;">
+                <div>
+                    <h3 style="color:#7f8c8d; margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px;">Customer</h3>
+                    <div style="font-size:20px; font-weight:bold; color:#2c3e50; margin-bottom:6px;">
+                        <?= getVal($inv, 'partner_id') ?>
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <h3 style="color:#7f8c8d; margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px;">Summary</h3>
+                    <div style="margin-bottom:10px;">
+                        <span style="color:#7f8c8d; font-size:15px;">Invoice Date:</span> 
+                        <strong style="font-size:15px;"><?= $inv['invoice_date'] ?? '-' ?></strong>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <span style="color:#7f8c8d; font-size:15px;">Due Date:</span> 
+                        <strong style="font-size:15px;"><?= $inv['invoice_date_due'] ?? '-' ?></strong>
+                    </div>
+                    <div style="font-size:28px; font-weight:bold; color:#2c3e50; margin-top:15px;">
+                        Rp <?= number_format($inv['amount_total']??0, 0, ',', '.') ?>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lines Section -->
+            <div style="margin-top:20px;">
+                <h3 style="color:#2c3e50; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:15px;">Invoice Lines</h3>
+                
+                <?php if(!empty($inv['lines'])): ?>
+                    <table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+                        <thead>
+                            <tr style="background:#f8f9fa; color:#7f8c8d; font-size:15px; text-transform:uppercase;">
+                                <th style="padding:15px; text-align:left; border-bottom:2px solid #dfe6e9;">Product</th>
+                                <th style="padding:15px; text-align:left; border-bottom:2px solid #dfe6e9;">Description</th>
+                                <th style="padding:15px; text-align:right; border-bottom:2px solid #dfe6e9;">Qty</th>
+                                <th style="padding:15px; text-align:right; border-bottom:2px solid #dfe6e9;">Unit Price</th>
+                                <th style="padding:15px; text-align:right; border-bottom:2px solid #dfe6e9;">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach($inv['lines'] as $line): ?>
+                                <?php if(($line['price_subtotal'] == 0 && $line['quantity'] == 0) && strpos($line['name'], 'Section') !== false) { 
+                                    // Skip sections or notes generally, or style them differently. For now show all.
+                                } ?>
+                                <tr style="border-bottom:1px solid #eee; font-size:16px;">
+                                    <td style="padding:15px; color:#2c3e50; font-weight:500;">
+                                        <?= is_array($line['product_id']) ? $line['product_id'][1] : '-' ?>
+                                    </td>
+                                    <td style="padding:15px; color:#7f8c8d;">
+                                        <?= $line['name'] ?>
+                                    </td>
+                                    <td style="padding:15px; text-align:right;">
+                                        <?= $line['quantity'] ?>
+                                    </td>
+                                    <td style="padding:15px; text-align:right;">
+                                        Rp <?= number_format($line['price_unit'], 0, ',', '.') ?>
+                                    </td>
+                                    <td style="padding:15px; text-align:right; font-weight:bold; color:#2c3e50;">
+                                        Rp <?= number_format($line['price_subtotal'], 0, ',', '.') ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                        <tfoot>
+                             <tr>
+                                 <td colspan="4" style="text-align:right; padding:20px; font-weight:bold; color:#7f8c8d; font-size:16px;">Total</td>
+                                 <td style="text-align:right; padding:20px; font-size:24px; font-weight:bold; color:#27ae60;">
+                                     Rp <?= number_format($inv['amount_total']??0, 0, ',', '.') ?>
+                                 </td>
+                             </tr>
+                        </tfoot>
+                    </table>
+                <?php else: ?>
+                    <div style="padding:30px; text-align:center; background:#f8f9fa; border-radius:8px; color:#7f8c8d; font-size:16px;">
+                        This invoice has no lines yet.
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Footer Notes -->
+            <?php if(!empty($inv['narration'])): ?>
+                <div style="margin-top:20px; padding:15px; background:#fffbe6; border-left:4px solid #f1c40f; border-radius:4px;">
+                    <strong>Note:</strong> <?= nl2br($inv['narration']) ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<script>
+// Simple interactions
+const invId = <?= $inv['id'] ?? 0 ?>;
+
+<?php if(($inv['state']??'') === 'draft'): ?>
+document.getElementById('btnPost')?.addEventListener('click', function(){
+    if(!confirm('Post invoice ini sekarang?')) return;
+    this.disabled = true; this.innerText = 'Posting...';
+    fetch('/api.php?action=post_invoice', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id: invId})
+    }).then(r=>r.json()).then(resp=>{
+        if(resp.success){ alert('Invoice Posted!'); location.reload(); }
+        else { alert('Gagal: '+resp.error); this.disabled=false; this.innerText='✅ Post Invoice'; }
+    });
+});
+<?php endif; ?>
+
+<?php if(($inv['state']??'') === 'posted'): ?>
+document.getElementById('btnRegisterPayment')?.addEventListener('click', function(){
+    const amount = prompt("Masukkan jumlah pembayaran:", "<?= $inv['amount_total']??0 ?>");
+    if(!amount) return;
+    
+    this.disabled = true; this.innerText = 'Processing...';
+    fetch('/api.php?action=register_payment', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id: invId, amount: parseFloat(amount)})
+    }).then(r=>r.json()).then(resp=>{
+        if(resp.success){ alert('Pembayaran berhasil dicatat!'); location.reload(); }
+        else { alert('Gagal: '+(resp.error||'Unknown')); this.disabled=false; this.innerText='💳 Register Payment'; }
+    });
+});
+<?php endif; ?>
+</script>

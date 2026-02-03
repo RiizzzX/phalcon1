@@ -10,6 +10,7 @@ use Phalcon\Mvc\View\Engine\Volt as VoltEngine;
 use Phalcon\Session\Adapter\Stream as SessionAdapter;
 use Phalcon\Session\Manager as SessionManager;
 use Phalcon\Mvc\Url as UrlResolver;
+use Phalcon\Mvc\Dispatcher;
 
 /**
  * Shared configuration service
@@ -19,15 +20,12 @@ $di->setShared('config', function () {
 });
 
 /**
- * The URL component is used to generate all kind of urls in the application
+ * Setup the dispatcher
  */
-$di->setShared('url', function () {
-    $config = $this->getConfig();
-
-    $url = new UrlResolver();
-    $url->setBaseUri($config->application->baseUri);
-
-    return $url;
+$di->setShared('dispatcher', function () {
+    $dispatcher = new Dispatcher();
+    $dispatcher->setDefaultNamespace('App\Controllers');
+    return $dispatcher;
 });
 
 /**

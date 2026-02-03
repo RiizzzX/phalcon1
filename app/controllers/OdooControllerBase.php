@@ -1,30 +1,38 @@
 <?php
 
+namespace App\Controllers;
+
 use Phalcon\Mvc\Controller;
 use App\Library\OdooClient;
 
-class OdooControllerBase extends Controller
+class OdooControllerBase extends ControllerBase
 {
     protected $odoo;
     
     public function initialize()
     {
+        // Log environment for debugging
+        error_log("OdooControllerBase initialize - ODOO_URL: " . getenv('ODOO_URL'));
+        error_log("OdooControllerBase initialize - ODOO_DB: " . getenv('ODOO_DB'));
+        error_log("OdooControllerBase initialize - ODOO_USERNAME: " . getenv('ODOO_USERNAME'));
+        
         try {
             // Initialize Odoo client for all Odoo controllers
             $this->odoo = new OdooClient();
 
             // Try a quick authentication to verify connection (non-fatal)
             try {
-                $this->odoo->authenticate();
+                $result = $this->odoo->authenticate();
+                error_log("Odoo auth successful, UID: " . json_encode($result));
                 $this->view->setVar('odooError', null);
             } catch (\Exception $e) {
-                error_log("Odoo auth failed: " . $e->getMessage());
+                error_log("Odoo auth failed: " . $e->getMessage() . "\n" . $e->getTraceAsString());
                 $this->view->setVar('odooError', 'Odoo connection failed: ' . $e->getMessage());
                 // keep $this->odoo instance (may still be usable for admin actions after Odoo is ready)
             }
         } catch (\Exception $e) {
             // Log and fallback
-            error_log("Odoo Client Error: " . $e->getMessage());
+            error_log("Odoo Client Error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
             $this->odoo = null;
             $this->view->setVar('odooError', 'Odoo client init failed: ' . $e->getMessage());
         }
@@ -47,6 +55,10 @@ class OdooControllerBase extends Controller
             $viewFolder = str_replace('-', '_', $viewFolder);
             $viewFolder = trim($viewFolder, '_');
             $this->view->setViewsDir($this->view->getViewsDir() . 'odoo/' . $viewFolder . '/');
+            
+            // Disable layout template - render only action view
+            $this->view->setTemplateAfter([]);
+            $this->view->setTemplateBefore([]);
         }
     }
 }

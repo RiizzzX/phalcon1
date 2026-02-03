@@ -1,0 +1,38 @@
+<div class="container mt-4">
+    <h1>📊 Update Stock</h1>
+    
+    <div class="card" style="max-width: 500px;">
+        <div class="card-body">
+            <h5 class="mb-3">{{ product.name }}</h5>
+            <p>
+                <strong>Current Stock:</strong> 
+                <span style="font-size: 1.5em; font-weight: bold; color: {% if product.quantity == 0 %}red{% elseif product.quantity < 5 %}orange{% else %}green{% endif %};">
+                    {{ product.quantity }} units
+                </span>
+            </p>
+            
+            <hr>
+            
+            <form method="POST" action="/inventory-maker/updatestock/{{ product.id }}">
+                <div class="mb-3">
+                    <label class="form-label">New Quantity *</label>
+                    <input type="number" name="quantity" class="form-control" value="{{ product.quantity }}" min="0" required>
+                    <small class="text-muted">Enter total quantity (not increment)</small>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Reason</label>
+                    <select name="reason" class="form-control">
+                        <option value="Manual adjustment">Manual adjustment</option>
+                        <option value="Stock check">Stock check</option>
+                        <option value="Damage/Loss">Damage/Loss</option>
+                        <option value="Return">Return</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-success">Update Stock</button>
+                <a href="/inventory-maker/list" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>

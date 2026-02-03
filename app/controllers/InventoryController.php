@@ -1,140 +1,149 @@
 <?php
+
 namespace App\Controllers;
 
-use Phalcon\Mvc\Controller;
 use App\Models\Inventory;
+use App\Models\Category;
 
-class InventoryController extends Controller
+class InventoryController extends ControllerBase
 {
-    public function indexAction()
-    {
-        // Landing page dengan penjelasan sistem
-        $this->view->title = 'Simple Inventory Tracker - Sistem Manajemen Inventaris';
-    }
-
     public function listAction()
     {
-        // Ambil semua items dari database
-        $items = Inventory::find([
-            'order' => 'created_at DESC'
+        $inventory = Inventory::find([
+            'order' => 'id DESC',
+            'limit' => 20
         ]);
-
-        $this->view->items = $items;
-        $this->view->title = 'Daftar Inventaris - Simple Inventory Tracker';
+        
+        $this->view->inventory = $inventory;
+        $this->view->syncStatus = ['total' => 0, 'synced' => 0, 'unsynced' => 0, 'sync_percentage' => 0];
     }
 
     public function addAction()
     {
         if ($this->request->isPost()) {
-            $item = new Inventory();
-            $item->name = $this->request->getPost('name');
-            $item->description = $this->request->getPost('description');
-            $item->quantity = (int)$this->request->getPost('quantity');
-            $item->category = $this->request->getPost('category');
-            $item->price = (float)$this->request->getPost('price');
-
-            if ($item->save()) {
-                $this->flash->success('Barang berhasil ditambahkan');
-            } else {
-                foreach ($item->getMessages() as $message) {
-                    $this->flash->error($message);
+            $name = $this->request->getPost('name');
+            $category = $this->request->getPost('category');
+            
+            if (!empty($name) && !empty($category)) {
+                $inv = new Inventory();
+                $inv->name = $name;
+                $inv->category = $category;
+                $inv->sku = $this->request->getPost('sku');
+                $inv->description = $this->request->getPost('description');
+                $inv->quantity = (int)($this->request->getPost('quantity') ?? 0);
+                $inv->product_type = $this->request->getPost('product_type') ?? 'consu';
+                $inv->cost_price = (float)($this->request->getPost('cost_price') ?? 0);
+                $inv->selling_price = (float)($this->request->getPost('selling_price') ?? 0);
+                $inv->status = 'active';
+                $inv->synced_to_odoo = 0;
+                
+                if ($inv->save()) {
+                    $this->flash->success("✓ Product created successfully!");
+                    return $this->response->redirect('/inventory/list');
+                } else {
+                    $this->flash->error("Failed to create product");
                 }
+            } else {
+                $this->flash->error("Product name and category are required");
             }
         }
-        $this->response->redirect('inventory/list');
+
+        // Load categories for dropdown
+        $categories = Category::find(['order' => 'name ASC']);
+        $this->view->categories = $categories;
     }
 
     public function editAction($id)
     {
-        $item = Inventory::findFirst($id);
-        if (!$item) {
-            $this->flash->error('Barang tidak ditemukan');
-            $this->response->redirect('inventory/list');
-            return;
+        $inv = Inventory::findFirstById($id);
+        if (!$inv) {
+            return $this->response->redirect('/inventory/list');
         }
-
+        
         if ($this->request->isPost()) {
-            $item->name = $this->request->getPost('name');
-            $item->description = $this->request->getPost('description');
-            $item->quantity = (int)$this->request->getPost('quantity');
-            $item->category = $this->request->getPost('category');
-            $item->price = (float)$this->request->getPost('price');
-
-            if ($item->save()) {
-                $this->flash->success('Barang berhasil diupdate');
+            $inv->name = $this->request->getPost('name');
+            $inv->category = $this->request->getPost('category');
+            $inv->sku = $this->request->getPost('sku');
+            $inv->description = $this->request->getPost('description');
+            $inv->quantity = (int)($this->request->getPost('quantity') ?? $inv->quantity);
+            $inv->product_type = $this->request->getPost('product_type') ?? $inv->product_type;
+            $inv->cost_price = (float)($this->request->getPost('cost_price') ?? $inv->cost_price);
+            $inv->selling_price = (float)($this->request->getPost('selling_price') ?? $inv->selling_price);
+            $inv->status = $this->request->getPost('status') ?? 'active';
+            
+            if ($inv->save()) {
+                $this->flash->success("✓ Product updated!");
+                return $this->response->redirect('/inventory/list');
             } else {
-                foreach ($item->getMessages() as $message) {
-                    $this->flash->error($message);
-                }
+                $this->flash->error("Failed to update product");
             }
-            $this->response->redirect('inventory/list');
-            return;
         }
-
-        $this->view->item = $item;
-        $this->view->title = 'Edit Barang - Simple Inventory Tracker';
+        
+        // Load categories for dropdown
+        $categories = Category::find(['order' => 'name ASC']);
+        $this->view->categories = $categories;
+        $this->view->inventory = $inv;
     }
 
     public function deleteAction($id)
     {
-        $item = Inventory::findFirst($id);
-        if ($item) {
-            $item->delete();
-            $this->flash->success('Barang berhasil dihapus');
-        } else {
-            $this->flash->error('Barang tidak ditemukan');
+        $inv = Inventory::findFirstById($id);
+        if ($inv) {
+            $inv->delete();
+            $this->flash->success("Deleted!");
         }
-        $this->response->redirect('inventory/list');
+        return $this->response->redirect('/inventory/list');
     }
 
     public function updateStockAction($id)
     {
-        $item = Inventory::findFirst($id);
-        if ($item) {
-            $operation = $this->request->getPost('operation');
-            $amount = (int)$this->request->getPost('amount');
-
-            if ($operation === 'add') {
-                $item->quantity += $amount;
-            } elseif ($operation === 'remove') {
-                $item->quantity = max(0, $item->quantity - $amount);
-            }
-
-            $item->save();
-            $this->flash->success('Stok berhasil diperbarui');
+        $inv = Inventory::findFirstById($id);
+        if (!$inv) {
+            return $this->response->redirect('/inventory/list');
         }
-        $this->response->redirect('inventory/list');
+        
+        if ($this->request->isPost()) {
+            $inv->quantity = (int)$this->request->getPost('quantity');
+            if ($inv->save()) {
+                $this->flash->success("Stock updated!");
+                return $this->response->redirect('/inventory/list');
+            }
+        }
+        
+        $this->view->inventory = $inv;
     }
 
-    public function searchAction()
+    public function syncToOdooAction($id)
     {
-        $searchTerm = $this->request->get('q');
-        $category = $this->request->get('category');
+        $this->flash->info('Sync disabled');
+        return $this->response->redirect('/inventory/list');
+    }
 
-        $conditions = [];
-        $bind = [];
+    public function syncAllAction()
+    {
+        $this->flash->info('Sync disabled');
+        return $this->response->redirect('/inventory/list');
+    }
 
-        if ($searchTerm) {
-            $conditions[] = "name LIKE :search: OR description LIKE :search:";
-            $bind['search'] = "%$searchTerm%";
-        }
+    public function statusAction()
+    {
+        $this->response->setJsonContent([
+            'total' => Inventory::count(),
+            'synced' => 0,
+            'unsynced' => Inventory::count(),
+            'sync_percentage' => 0
+        ]);
+        return $this->response;
+    }
 
-        if ($category) {
-            $conditions[] = "category = :category:";
-            $bind['category'] = $category;
-        }
-
-        $where = '';
-        if (!empty($conditions)) {
-            $where = 'WHERE ' . implode(' AND ', $conditions);
-        }
-
-        $sql = "SELECT * FROM inventory $where ORDER BY created_at DESC";
-        $items = $this->modelsManager->executeQuery($sql, $bind);
-
-        $this->view->items = $items;
-        $this->view->searchTerm = $searchTerm;
-        $this->view->category = $category;
-        $this->view->title = 'Hasil Pencarian - Simple Inventory Tracker';
+    public function indexAction()
+    {
+        $this->view->syncStatus = [
+            'total' => Inventory::count(),
+            'synced' => 0,
+            'unsynced' => Inventory::count(),
+            'sync_percentage' => 0
+        ];
     }
 }
+

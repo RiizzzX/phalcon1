@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><?= $title ?? 'PO Detail' ?></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .container { max-width: 1200px; margin: 20px auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; }
+        .detail-card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+        .detail-item { padding: 10px; border-bottom: 1px solid #ecf0f1; }
+        .detail-label { font-weight: 600; color: #34495e; }
+        .detail-value { color: #2c3e50; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        th, td { padding: 15px; text-align: left; }
+        th { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: 600; text-transform: uppercase; font-size: 13px; }
+        tbody tr { border-bottom: 1px solid #ecf0f1; transition: background 0.2s; }
+        tbody tr:hover { background: #f8f9fa; }
+        .btn { padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 5px; transition: all 0.3s; font-weight: 600; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .state-draft { background: #e2e3e5; color: #383d41; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .state-sent { background: #cce5ff; color: #004085; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .state-purchase { background: #d4edda; color: #155724; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .state-done { background: #d1ecf1; color: #0c5460; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .state-cancel { background: #f8d7da; color: #721c24; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="margin-bottom: 20px;">
+            <a href="/odoo-dashboard" style="color: #3498db; text-decoration: none;">📊 Dashboard</a> / 
+            <a href="/odoo-purchase" style="color: #3498db; text-decoration: none;">Purchase Orders</a> / 
+            <span style="color: #7f8c8d;">Detail</span>
+        </div>
+        
+        <div class="header">
+            <h1 style="margin: 0 0 10px 0;">📄 Detail Purchase Order</h1>
+            <p style="margin: 0; opacity: 0.9;">Informasi lengkap pesanan pembelian</p>
+        </div>
+        
+        <?php if (isset($order) && $order): ?>
+            <div class="detail-card">
+                <h3>Informasi PO</h3>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Nomor PO:</div>
+                        <div class="detail-value"><?= htmlspecialchars($order['name']) ?></div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Supplier:</div>
+                        <div class="detail-value">
+                            <?php if (is_array($order['partner_id'])): ?>
+                                <?= htmlspecialchars($order['partner_id'][1]) ?>
+                            <?php else: ?>
+                                Partner #<?= $order['partner_id'] ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Tanggal Order:</div>
+                        <div class="detail-value"><?= date('d M Y H:i', strtotime($order['date_order'])) ?></div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Total Amount:</div>
+                        <div class="detail-value" style="font-weight: 600; color: #2c3e50;">Rp <?= number_format($order['amount_total'], 0, ',', '.') ?></div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Status:</div>
+                        <div class="detail-value">
+                            <span class="state-<?= $order['state'] ?>"><?= strtoupper($order['state']) ?></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-card">
+                <h3>Detail Produk</h3>
+                <?php if (!empty($lines)): ?>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Produk</th>
+                                <th>Quantity</th>
+                                <th>Harga Unit</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($lines as $line): ?>
+                                <tr>
+                                    <td>
+                                        <?php if (is_array($line['product_id'])): ?>
+                                            <?= htmlspecialchars($line['product_id'][1]) ?>
+                                        <?php else: ?>
+                                            <?= htmlspecialchars($line['name']) ?>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><?= number_format($line['product_qty'], 0) ?></td>
+                                    <td>Rp <?= number_format($line['price_unit'], 0, ',', '.') ?></td>
+                                    <td style="font-weight: 600;">Rp <?= number_format($line['price_subtotal'] ?? ($line['product_qty'] * $line['price_unit']), 0, ',', '.') ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php else: ?>
+                    <p>Tidak ada detail produk.</p>
+                <?php endif; ?>
+            </div>
+        <?php else: ?>
+            <div class="detail-card">
+                <p>PO tidak ditemukan.</p>
+            </div>
+        <?php endif; ?>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="/odoo-purchase" class="btn btn-primary">⬅️ Kembali ke Daftar PO</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!-- Supplier Modal (partial) -->
+<div class="modal" id="supplierModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>➕ Tambah Supplier</h3>
+        </div>
+        <div id="supplierMsg" style="margin-bottom: 10px;"></div>
+
+        <div class="form-group">
+            <label>Nama Supplier <span style="color:#e74c3c">*</span></label>
+            <input id="supplier_name" name="name" type="text" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
+        </div>
+
+        <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div>
+                <label>Email</label>
+                <input id="supplier_email" name="email" type="email" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
+            </div>
+            <div>
+                <label>Telepon</label>
+                <input id="supplier_phone" name="phone" type="text" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:8px;">
+            <label style="display:block; font-weight:600; margin-bottom:6px;">Simpan ke:</label>
+            <label style="display:inline-flex; gap:8px; align-items:center; margin-right:12px;"><input type="radio" name="supplier_save_to" value="local" checked> Lokal</label>
+            <label style="display:inline-flex; gap:8px; align-items:center;"><input type="radio" name="supplier_save_to" value="odoo"> Odoo</label>
+        </div>
+        <div class="modal-footer" style="margin-top:12px; text-align:right;">
+            <button type="button" id="supplierCancel" class="btn btn-secondary">Batal</button>
+            <button type="button" id="supplierSave" class="btn btn-success">Simpan</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function(){
+    const modal = document.getElementById('supplierModal');
+    const openButtons = document.querySelectorAll('[data-open-supplier]');
+    const cancelBtn = document.getElementById('supplierCancel');
+    const saveBtn = document.getElementById('supplierSave');
+    const msgBox = document.getElementById('supplierMsg');
+
+    // Simple global toast (idempotent)
+    if (!window.showToast) {
+        window.showToast = function(msg, type = 'info') {
+            let t = document.getElementById('globalToast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'globalToast';
+                t.style.position = 'fixed';
+                t.style.right = '20px';
+                t.style.top = '20px';
+                t.style.zIndex = 99999;
+                t.style.padding = '10px 16px';
+                t.style.borderRadius = '8px';
+                t.style.boxShadow = '0 6px 18px rgba(0,0,0,0.12)';
+                t.style.transition = 'opacity 0.3s ease';
+                t.style.opacity = '0';
+                document.body.appendChild(t);
+            }
+            t.textContent = msg;
+            t.style.background = (type === 'success') ? '#d4edda' : (type === 'danger' ? '#f8d7da' : '#d1ecf1');
+            t.style.color = (type === 'success') ? '#155724' : (type === 'danger' ? '#721c24' : '#0c5460');
+            t.style.opacity = '1';
+            setTimeout(() => { t.style.opacity = '0'; }, 2500);
+        };
+    }
+
+    function showSupplierModal() {
+        if (!modal) return;
+        // ensure visible across pages regardless of CSS
+        modal.style.display = 'flex';
+        modal.classList.add('show');
+    }
+    function closeSupplierModal() {
+        if (!modal) return;
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+        if (msgBox) msgBox.innerHTML = '';
+        if (document.getElementById('supplier_name')) document.getElementById('supplier_name').value = '';
+        if (document.getElementById('supplier_email')) document.getElementById('supplier_email').value = '';
+        if (document.getElementById('supplier_phone')) document.getElementById('supplier_phone').value = '';
+    }
+
+    // Expose globally for pages to open
+    window.showSupplierModal = showSupplierModal;
+    window.closeSupplierModal = closeSupplierModal;
+
+    // Attach to any elements that want to open modal via data attr
+    openButtons.forEach(btn => btn.addEventListener('click', showSupplierModal));
+    if (cancelBtn) cancelBtn.addEventListener('click', closeSupplierModal);
+
+    if (saveBtn) saveBtn.addEventListener('click', function() {
+        const name = (document.getElementById('supplier_name') || {}).value || '';
+        const email = (document.getElementById('supplier_email') || {}).value || '';
+        const phone = (document.getElementById('supplier_phone') || {}).value || '';
+        const saveTo = (document.querySelector('input[name="supplier_save_to"]:checked') || {}).value || 'local';
+
+        if (!name.trim()) {
+            msgBox.innerHTML = '<div class="alert alert-danger show">Nama supplier wajib diisi</div>';
+            return;
+        }
+
+        msgBox.innerHTML = '<div class="alert alert-info show">Menyimpan...</div>';
+
+        const formData = new FormData();
+        formData.append('name', name.trim());
+        formData.append('email', email.trim());
+        formData.append('phone', phone.trim());
+        formData.append('save_to', saveTo);
+
+        fetch('/api.php?action=create_supplier', {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data && data.success) {
+                // Add to any supplier selects on the page, avoid duplicates
+                const selectors = Array.from(document.querySelectorAll('select[name="partner_id"], #poSupplier, select[name="supplier_id"]'));
+                selectors.forEach(sel => {
+                    try {
+                        const val = data.partner_id ? String(data.partner_id) : 'local-' + data.id;
+                        const existing = sel.querySelector('option[value="' + val + '"]');
+                        if (existing) {
+                            existing.textContent = data.name + (val.startsWith('local-') ? ' (lokal)' : '');
+                            sel.value = val;
+                        } else {
+                            const opt = document.createElement('option');
+                            opt.value = val;
+                            opt.dataset.localId = data.id;
+                            opt.textContent = data.name + (val.startsWith('local-') ? ' (lokal)' : '');
+                            sel.appendChild(opt);
+                            sel.value = opt.value;
+                        }
+                        if (typeof showToast === 'function') showToast('Supplier berhasil dibuat', 'success');
+                    } catch (e) {}
+                });
+
+                msgBox.innerHTML = '<div class="alert alert-success show">Supplier berhasil dibuat</div>';
+                if (typeof loadSuppliers === 'function') {
+                    try { loadSuppliers(); } catch (e) { /* ignore */ }
+                }
+                setTimeout(() => { closeSupplierModal(); }, 600);
+            } else {
+                msgBox.innerHTML = '<div class="alert alert-danger show">Gagal: ' + (data.error || 'Unknown error') + '</div>';
+            }
+        })
+        .catch(err => {
+            msgBox.innerHTML = '<div class="alert alert-danger show">Error: ' + (err.message || err) + '</div>';
+        });
+    });
+})();
+</script>

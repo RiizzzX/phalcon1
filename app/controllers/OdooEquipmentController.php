@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Controllers;
+
 use App\Library\OdooClient;
 use App\Models\Inventory;
 
@@ -78,7 +80,7 @@ class OdooEquipmentController extends OdooControllerBase
                         $item->description = $data['description'] ?? '';
                         $item->quantity = 1;
                         $item->category = $data['category'] ?? 'other';
-                        $item->price = (float)$data['daily_rate'];
+                        $item->selling_price = (float)$data['daily_rate'];
                         $item->save();
                     } catch (\Exception $invEx) {
                         error_log('Failed to create inventory item: ' . $invEx->getMessage());
@@ -130,7 +132,7 @@ class OdooEquipmentController extends OdooControllerBase
                     if ($local) {
                         $local->description = $data['description'];
                         $local->category = $data['category'];
-                        $local->price = (float)$data['daily_rate'];
+                        $local->selling_price = (float)$data['daily_rate'];
                         $local->save();
                     }
                 } catch (\Exception $invEx) {

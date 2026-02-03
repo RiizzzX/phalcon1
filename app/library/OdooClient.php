@@ -18,9 +18,9 @@ class OdooClient
     {
         // Konfigurasi koneksi Odoo dari environment variables
         $this->url = getenv('ODOO_URL') ?: 'http://odoo:8069';
-        $this->db = getenv('ODOO_DB') ?: 'test';
-        $this->username = getenv('ODOO_USERNAME') ?: 'farizlahya@gmail.com';
-        $this->password = getenv('ODOO_PASSWORD') ?: 'password';
+        $this->db = getenv('ODOO_DB') ?: 'odoo19';
+        $this->username = getenv('ODOO_USERNAME') ?: 'admin';
+        $this->password = getenv('ODOO_PASSWORD') ?: 'admin';
     }
 
     /**
@@ -28,12 +28,13 @@ class OdooClient
      */
     private function buildXmlRpcRequest($method, $params)
     {
-        $xml = '<?xml version="1.0"?><methodCall><methodName>' . $method . '</methodName><params>';
-        
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<methodCall><methodName>' . $method . '</methodName><params>';
+
         foreach ($params as $param) {
             $xml .= '<param>' . $this->valueToXml($param) . '</param>';
         }
-        
+
         $xml .= '</params></methodCall>';
         return $xml;
     }
@@ -78,36 +79,45 @@ class OdooClient
      */
     private function parseXmlRpcResponse($xml)
     {
+        // Check if response looks like XML-RPC
+        if (stripos($xml, '<methodResponse>') === false) {
+            if (stripos($xml, '<!DOCTYPE') === 0 || stripos($xml, '<html') === 0) {
+                throw new \Exception('Odoo server returned HTML error page. Check if Odoo is running and accessible at ' . $this->url);
+            } else {
+                throw new \Exception('Invalid XML-RPC response from Odoo server');
+            }
+        }
+
         // Suppress warnings for malformed XML
         $prevErrorLevel = libxml_use_internal_errors(true);
-        
+
         try {
             $xmlObj = simplexml_load_string($xml);
-            
+
             if ($xmlObj === false) {
                 $errors = libxml_get_errors();
                 libxml_clear_errors();
-                throw new \Exception('Failed to parse XML: ' . print_r($errors, true));
+                throw new \Exception('Failed to parse XML-RPC response from Odoo server');
             }
-            
+
             // Check for fault
             if (isset($xmlObj->fault)) {
                 $fault = $this->parseValue($xmlObj->fault->value);
                 throw new \Exception('XML-RPC Fault: ' . print_r($fault, true));
             }
-            
+
             // Extract result from params/param/value
             if (isset($xmlObj->params->param->value)) {
                 return $this->parseValue($xmlObj->params->param->value);
             }
-            
+
             throw new \Exception('No value found in XML-RPC response');
-            
+
         } finally {
             libxml_use_internal_errors($prevErrorLevel);
         }
     }
-    
+
     /**
      * Parse XML-RPC value recursively
      */
@@ -123,7 +133,7 @@ class OdooClient
             }
             return $result;
         }
-        
+
         // Handle struct
         if (isset($value->struct)) {
             $result = [];
@@ -133,7 +143,7 @@ class OdooClient
             }
             return $result;
         }
-        
+
         // Handle scalar types
         if (isset($value->string)) return (string)$value->string;
         if (isset($value->int)) return (int)$value->int;
@@ -142,11 +152,11 @@ class OdooClient
         if (isset($value->boolean)) return (bool)(int)$value->boolean;
         if (isset($value->dateTime)) return (string)$value->dateTime->iso8601;
         if (isset($value->base64)) return base64_decode((string)$value->base64);
-        
+
         // Handle nil/null
         if (isset($value->nil)) return null;
         if (count($value->children()) === 0) return null;
-        
+
         return null;
     }
 
@@ -156,7 +166,7 @@ class OdooClient
     private function xmlRpcCall($endpoint, $method, $params)
     {
         $xml = $this->buildXmlRpcRequest($method, $params);
-        
+
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $this->url . $endpoint);
         curl_setopt($ch, CURLOPT_POST, 1);
@@ -164,19 +174,36 @@ class OdooClient
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: text/xml']);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_FAILONERROR, false);
+
         $response = curl_exec($ch);
-        
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+
         if (curl_errno($ch)) {
-            throw new \Exception('cURL Error: ' . curl_error($ch));
+            $errorMsg = 'cURL Error: ' . $error;
+            if (strpos($error, 'Operation timed out') !== false) {
+                $errorMsg .= ' Connection timeout. Check Odoo server status.';
+            }
+            throw new \Exception($errorMsg);
         }
-        
+
         curl_close($ch);
-        
+
         if (empty($response)) {
-            throw new \Exception('Empty response from Odoo');
+            throw new \Exception('Empty response from Odoo server at ' . $this->url . $endpoint);
         }
-        
+
+        // Check if response is HTML error page
+        if (stripos($response, '<!DOCTYPE') === 0 || stripos($response, '<html') === 0) {
+            throw new \Exception('Odoo server returned HTML error page. Check if Odoo is running and accessible at ' . $this->url);
+        }
+
+        if ($httpCode !== 200) {
+            throw new \Exception('HTTP Error ' . $httpCode . ' from Odoo server. Response: ' . substr($response, 0, 200));
+        }
+
         return $this->parseXmlRpcResponse($response);
     }
 
@@ -202,7 +229,7 @@ class OdooClient
     /**
      * Execute method
      */
-    private function execute($model, $method, $args = [], $kwargs = [])
+    public function execute($model, $method, $args = [], $kwargs = [])
     {
         if (!$this->uid) {
             $this->authenticate();
@@ -216,7 +243,7 @@ class OdooClient
             $method,
             $args
         ];
-        
+
         // Add kwargs if provided
         if (!empty($kwargs)) {
             $params[] = $kwargs;
@@ -224,9 +251,54 @@ class OdooClient
 
         return $this->xmlRpcCall('/xmlrpc/2/object', 'execute_kw', $params);
     }
-    
+
     /**
-     * Execute method (public untuk testing)
+     * Test connection to Odoo server
+     */
+    public function testConnection()
+    {
+        try {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $this->url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+            curl_setopt($ch, CURLOPT_FAILONERROR, false);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
+
+            if ($error) {
+                return [
+                    'success' => false,
+                    'error' => 'Connection failed: ' . $error,
+                    'details' => [
+                        'url' => $this->url,
+                        'http_code' => $httpCode
+                    ]
+                ];
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Connection successful',
+                'details' => [
+                    'url' => $this->url,
+                    'http_code' => $httpCode
+                ]
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Execute method (alias for execute)
      */
     public function executePublic($model, $method, $args = [], $kwargs = [])
     {
@@ -234,95 +306,16 @@ class OdooClient
     }
 
     /**
-     * Get equipments
+     * Get connection info
      */
-    public function getEquipments($domain = [])
+    public function getConnectionInfo()
     {
-        // Domain harus berupa array of tuples, contoh: [['status', '=', 'available']]
-        // Jika kosong, ambil semua
-        return $this->execute('equipment.rental', 'search_read', 
-            [$domain],  // args: domain filter
-            ['fields' => ['id', 'name', 'code', 'category', 'daily_rate', 'status', 'condition']] // kwargs
-        );
-    }
-
-    /**
-     * Get equipment by ID
-     */
-    public function getEquipment($id)
-    {
-        $result = $this->execute('equipment.rental', 'read', 
-            [[$id]], // args: ids
-            ['fields' => ['name', 'code', 'category', 'daily_rate', 'status', 'condition', 'description']] // kwargs
-        );
-        
-        return $result ? $result[0] : null;
-    }
-
-    /**
-     * Create equipment
-     */
-    public function createEquipment($data)
-    {
-        return $this->execute('equipment.rental', 'create', [[$data]]);
-    }
-
-    /**
-     * Update equipment
-     */
-    public function updateEquipment($id, $data)
-    {
-        return $this->execute('equipment.rental', 'write', [[$id], $data]);
-    }
-
-    /**
-     * Get rentals
-     */
-    public function getRentals($domain = [])
-    {
-        return $this->execute('rental.transaction', 'search_read',
-            [$domain], // args: domain
-            ['fields' => ['name', 'customer_name', 'customer_phone', 'equipment_id', 'rental_date', 'return_date', 'total_amount', 'state']] // kwargs
-        );
-    }
-
-    /**
-     * Create rental
-     */
-    public function createRental($data)
-    {
-        return $this->execute('rental.transaction', 'create', [[$data]]);
-    }
-
-    /**
-     * Confirm rental
-     */
-    public function confirmRental($id)
-    {
-        return $this->execute('rental.transaction', 'action_confirm', [[$id]]);
-    }
-
-    /**
-     * Return rental
-     */
-    public function returnRental($id)
-    {
-        return $this->execute('rental.transaction', 'action_return', [[$id]]);
-    }
-
-    /**
-     * Get available equipments
-     */
-    public function getAvailableEquipments()
-    {
-        return $this->getEquipments([['status', '=', 'available']]);
-    }
-
-    /**
-     * Delete equipment by ID (unlink in Odoo)
-     */
-    public function deleteEquipment($id)
-    {
-        return $this->execute('equipment.rental', 'unlink', [[$id]]);
+        return [
+            'url' => $this->url,
+            'database' => $this->db,
+            'username' => $this->username,
+            'authenticated' => $this->uid ? true : false,
+            'user_id' => $this->uid
+        ];
     }
 }

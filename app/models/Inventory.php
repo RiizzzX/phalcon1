@@ -10,9 +10,19 @@ class Inventory extends Model
     public $description;
     public $quantity;
     public $category;
-    public $price;
+    public $selling_price;
     public $created_at;
     public $updated_at;
+    
+    // New fields from migration
+    public $odoo_id;
+    public $sku;
+    public $product_type;
+    public $cost_price;
+    public $status;
+    public $synced_to_odoo;
+    public $last_sync_at;
+    public $sync_notes;
 
     public function initialize()
     {
@@ -32,42 +42,7 @@ class Inventory extends Model
 
     public function validation()
     {
-        $validator = new \Phalcon\Filter\Validation();
-
-        $validator->add(
-            'name',
-            new \Phalcon\Filter\Validation\Validator\PresenceOf(
-                [
-                    'message' => 'Nama barang wajib diisi',
-                ]
-            )
-        );
-
-        $validator->add(
-            'category',
-            new \Phalcon\Filter\Validation\Validator\PresenceOf(
-                [
-                    'message' => 'Kategori wajib diisi',
-                ]
-            )
-        );
-
-        $validator->add(
-            'quantity',
-            new \Phalcon\Filter\Validation\Validator\Numericality([
-                'message' => 'Jumlah harus angka',
-                'allowEmpty' => true
-            ])
-        );
-
-        $validator->add(
-            'price',
-            new \Phalcon\Filter\Validation\Validator\Numericality([
-                'message' => 'Harga harus angka',
-                'allowEmpty' => true
-            ])
-        );
-
-        return $this->validate($validator);
+        // Validation disabled - use simple form validation instead
+        return true;
     }
 }

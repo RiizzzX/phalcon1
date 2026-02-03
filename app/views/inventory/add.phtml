@@ -1,47 +1,80 @@
 <div class="container mt-4">
-    <h2>Tambah Barang Baru</h2>
 
     <div class="card">
         <div class="card-body">
+            <h3>Add Product</h3>
             <form method="POST" action="/inventory/add">
+                <!-- Required Fields -->
                 <div class="mb-3">
-                    <label class="form-label">Nama Barang *</label>
-                    <input type="text" name="name" class="form-control" placeholder="Contoh: Laptop" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Deskripsi</label>
-                    <textarea name="description" class="form-control" rows="3" placeholder="Deskripsi barang..."></textarea>
+                    <label class="form-label">Product Name <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-control" placeholder="E.g: Laptop Dell XPS" required>
                 </div>
 
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label">Kategori *</label>
+                            <label class="form-label">Category <span class="text-danger">*</span></label>
                             <select name="category" class="form-control" required>
-                                <option value="">- Pilih Kategori -</option>
-                                <option value="Electronics">Electronics</option>
-                                <option value="Accessories">Accessories</option>
-                                <option value="Office">Office</option>
+                                <option value="">- Select Category -</option>
+                                <?php foreach ($categories as $cat): ?>
+                                    <option value="<?= $cat->name ?>"><?= $cat->name ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label">Harga (Rp) *</label>
-                            <input type="number" name="price" class="form-control" placeholder="0" min="0" step="0.01" required>
+                            <label class="form-label">SKU / Code</label>
+                            <input type="text" name="sku" class="form-control" placeholder="E.g: SKU-001">
                         </div>
                     </div>
                 </div>
 
+                <!-- Optional: Pricing -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Cost Price (Rp)</label>
+                            <input type="number" name="cost_price" class="form-control" placeholder="0" min="0" step="0.01">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Selling Price (Rp)</label>
+                            <input type="number" name="selling_price" class="form-control" placeholder="0" min="0" step="0.01">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Optional: Stock Tracking -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Initial Quantity</label>
+                            <input type="number" name="quantity" class="form-control" placeholder="0" min="0">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Product Type</label>
+                            <select name="product_type" class="form-control">
+                                <option value="consu">Consumable</option>
+                                <option value="product">Storable</option>
+                                <option value="service">Service</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Optional: Description -->
                 <div class="mb-3">
-                    <label class="form-label">Jumlah Stok *</label>
-                    <input type="number" name="quantity" class="form-control" placeholder="0" min="0" required>
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="form-control" rows="3" placeholder="Product details..."></textarea>
                 </div>
 
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-success">Simpan</button>
-                    <a href="/inventory/list" class="btn btn-secondary">Batal</a>
+                    <button type="submit" class="btn btn-success">Create Product</button>
+                    <a href="/inventory/list" class="btn btn-secondary">Cancel</a>
                 </div>
             </form>
         </div>
@@ -50,6 +83,6 @@
 
 <style>
 .container {
-    max-width: 700px;
+    max-width: 800px;
 }
 </style>

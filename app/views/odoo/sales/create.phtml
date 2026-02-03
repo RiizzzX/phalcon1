@@ -12,46 +12,56 @@
         <p style="margin: 0; opacity: 0.9;">Buat pesanan penjualan ke customer</p>
     </div>
 
-    <form method="post" style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 800px;">
+    <form id="soForm" method="post" style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 800px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h3 style="margin: 0; color: #2c3e50;">👤 Customer</h3>
-            <a href="/odoo-sales/create-customer" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600;">
+            <button type="button" data-open-customer style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600;">
                 ➕ Tambah Customer
-            </a>
+            </button>
         </div>
         <div style="margin-bottom: 20px;">
             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">Pilih Customer *</label>
-            <select name="partner_id" required style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; font-size: 14px;">
-                <option value="">-- Pilih Customer --</option>
-                <?php if (isset($customers) && !empty($customers)): ?>
-                    <?php foreach ($customers as $customer): ?>
-                        <option value="<?= $customer['id'] ?>"><?= htmlspecialchars($customer['name']) ?></option>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </select>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <select name="partner_id" id="soCustomer" required style="flex:1; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; font-size: 14px;">
+                    <option value="">-- Pilih Customer --</option>
+                    <?php if (isset($customers) && !empty($customers)): ?>
+                        <?php foreach ($customers as $customer): ?>
+                            <option value="<?= $customer['id'] ?>"><?= htmlspecialchars($customer['name']) ?></option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+                <button type="button" id="deleteCustomerBtn" class="btn btn-danger btn-small" title="Hapus customer terpilih">🗑️</button>
+            </div>
         </div>
+
+        <?php include __DIR__ . '/_customer_modal.phtml'; ?>
         
         <hr style="margin: 30px 0; border: none; border-top: 2px solid #ecf0f1;">
         <h3 style="margin: 0 0 20px 0; color: #2c3e50;">📦 Produk</h3>
         
-        <div style="margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">Pilih Produk *</label>
-            <select name="product_id" id="productSelect" required onchange="updateProductInfo()" style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; font-size: 14px;">
-                <option value="">-- Pilih Produk --</option>
-                <?php if (isset($products) && !empty($products)): ?>
-                    <?php foreach ($products as $product): ?>
-                        <option value="<?= $product['id'] ?>" 
-                                data-name="<?= htmlspecialchars($product['name']) ?>"
-                                data-price="<?= $product['list_price'] ?? 0 ?>"
-                                data-code="<?= htmlspecialchars($product['default_code'] ?? '') ?>">
-                            <?= htmlspecialchars($product['name']) ?>
-                            <?php if (isset($product['default_code'])): ?>
-                                [<?= htmlspecialchars($product['default_code']) ?>]
-                            <?php endif; ?>
-                        </option>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </select>
+        <div style="margin-bottom: 20px; display:flex; gap:12px; align-items:center;">
+            <div style="flex:1;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">Pilih Produk *</label>
+                <select name="product_id" id="productSelect" required onchange="updateProductInfo()" style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; font-size: 14px;">
+                    <option value="">-- Pilih Produk --</option>
+                    <?php if (isset($products) && !empty($products)): ?>
+                        <?php foreach ($products as $product): ?>
+                            <option value="<?= $product['id'] ?>" 
+                                    data-name="<?= htmlspecialchars($product['name']) ?>"
+                                    data-price="<?= $product['list_price'] ?? 0 ?>"
+                                    data-code="<?= htmlspecialchars($product['default_code'] ?? '') ?>">
+                                <?= htmlspecialchars($product['name']) ?>
+                                <?php if (isset($product['default_code'])): ?>
+                                    [<?= htmlspecialchars($product['default_code']) ?>]
+                                <?php endif; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
+            <div style="width: 180px; text-align:right;">
+                <a href="/inventory-maker/add" target="_blank" style="display:inline-block; padding: 10px 14px; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; border-radius: 8px; text-decoration: none; font-weight:600;">➕ Tambah Produk</a>
+            </div>
         </div>
         
         <div id="productInfo" style="display: none; background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); padding: 15px; border-radius: 8px; margin: 15px 0;">
@@ -60,13 +70,16 @@
                 <div>Nama: <span id="infoName">-</span></div>
                 <div>Kode: <span id="infoCode">-</span></div>
                 <div>Harga: Rp <span id="infoPrice">0</span></div>
+                <div>Stok Saat Ini: <strong><span id="infoStock">-</span></strong></div>
+                <div>Kategori: <span id="infoCategory">-</span></div>
             </div>
         </div>
+        <input type="hidden" name="product_name" id="productName">
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
             <div>
                 <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">Quantity *</label>
-                <input type="number" name="quantity" id="quantity" value="1" min="1" required onchange="calculateTotal()" style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; font-size: 14px;">
+                <input type="number" name="quantity" id="quantity" value="1" min="1" required onchange="calculateTotal(); checkQuantityLimit();" oninput="checkQuantityLimit();" style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; font-size: 14px;">
             </div>
             <div>
                 <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">Harga Per Unit *</label>
@@ -98,21 +111,145 @@ function updateProductInfo() {
     const option = select.options[select.selectedIndex];
     const productInfo = document.getElementById('productInfo');
     
-    if (option.value) {
+    // Clear existing poll
+    if (window.soProductStockPoll) {
+        clearInterval(window.soProductStockPoll);
+        window.soProductStockPoll = null;
+    }
+
+    if (option && option.value) {
+        const productId = option.value;
         const name = option.dataset.name || '-';
         const code = option.dataset.code || '-';
         const price = parseFloat(option.dataset.price) || 0;
+        const qty = (option.dataset.qty !== undefined && option.dataset.qty !== '') ? option.dataset.qty : '-';
+        const category = option.dataset.category || '-';
         
         document.getElementById('infoName').textContent = name;
         document.getElementById('infoCode').textContent = code;
         document.getElementById('infoPrice').textContent = price.toLocaleString('id-ID');
+        document.getElementById('infoStock').textContent = qty;
+        document.getElementById('infoCategory').textContent = category;
         document.getElementById('price').value = price;
+        // fill hidden product name for server
+        const pn = document.getElementById('productName'); if (pn) pn.value = name;
         
         productInfo.style.display = 'block';
         calculateTotal();
+
+        // Fetch immediately and poll every 5 seconds to keep stock fresh
+        fetchInventory(productId);
+        window.soProductStockPoll = setInterval(() => fetchInventory(productId), 5000);
+
+        // Set max on quantity input
+        const qtyInput = document.getElementById('quantity');
+        if (qty !== '-' && !isNaN(qty)) {
+            qtyInput.max = qty;
+        } else {
+            qtyInput.removeAttribute('max');
+        }
+
+        // Validate quantity immediately
+        checkQuantityLimit();
     } else {
         productInfo.style.display = 'none';
     }
+}
+
+// Check and show warning if qty exceeds stock
+function checkQuantityLimit() {
+    const select = document.getElementById('productSelect');
+    const option = select && select.options[select.selectedIndex];
+    const stock = option && option.dataset.qty !== undefined ? parseFloat(option.dataset.qty) : null;
+    const qtyInput = document.getElementById('quantity');
+    const qty = parseFloat(qtyInput.value) || 0;
+    
+    const warnId = 'soStockWarning';
+    let warn = document.getElementById(warnId);
+    
+    if (stock !== null && !isNaN(stock) && qty > stock) {
+        if (!warn) {
+            warn = document.createElement('div');
+            warn.id = warnId;
+            warn.style.background = '#fff3cd';
+            warn.style.border = '1px solid #ffc107';
+            warn.style.padding = '12px';
+            warn.style.borderRadius = '6px';
+            warn.style.marginTop = '10px';
+            warn.style.color = '#856404';
+            warn.innerHTML = '⚠️ <strong>Peringatan:</strong> Jumlah melebihi stok tersedia (' + stock + ')';
+            qtyInput.parentElement.appendChild(warn);
+        } else {
+            warn.innerHTML = '⚠️ <strong>Peringatan:</strong> Jumlah melebihi stok tersedia (' + stock + ')';
+        }
+    } else {
+        if (warn) warn.remove();
+    }
+}
+
+// Fetch latest product info/stock and sync option dataset
+function fetchInventory(productId) {
+    if (!productId) return;
+    fetch('/inventory-api/view/' + productId)
+        .then(r => r.json())
+        .then(data => {
+            if (data && data.success && data.data) {
+                const qty = (data.data.quantity !== undefined) ? data.data.quantity : (data.data.qty_available ?? 0);
+                document.getElementById('infoStock').textContent = qty;
+                const select = document.getElementById('productSelect');
+                if (select) {
+                    const option = select.querySelector('option[value="' + productId + '"]');
+                    if (option) {
+                        option.dataset.qty = qty;
+                        const price = option.dataset.price || '';
+                        option.textContent = `${option.dataset.name} (Rp ${formatCurrency(price ? parseFloat(price) : 0)}) — Stok: ${qty}`;
+                    }
+                }
+                // Update max on quantity input
+                const qtyInput = document.getElementById('quantity');
+                if (qtyInput && !isNaN(qty)) {
+                    qtyInput.max = qty;
+                }
+                // Check limit after update
+                checkQuantityLimit();
+            }
+        })
+        .catch(err => {
+            console.error('Error fetching inventory view:', err);
+            document.getElementById('infoStock').textContent = 'N/A';
+        });
+        }
+
+function formatCurrency(value) {
+    return parseFloat(value).toLocaleString('id-ID', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    });
+}
+
+function showAlert(message, type = 'info') {
+    // Minimal in-page alert fallback
+    const containerId = 'soAlertContainer';
+    let container = document.getElementById(containerId);
+    if (!container) {
+        container = document.createElement('div');
+        container.id = containerId;
+        container.style.position = 'fixed';
+        container.style.top = '20px';
+        container.style.right = '20px';
+        container.style.zIndex = 9999;
+        document.body.appendChild(container);
+    }
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} show`;
+    alert.textContent = message;
+    alert.style.marginBottom = '8px';
+    alert.style.padding = '12px 16px';
+    alert.style.borderRadius = '6px';
+    alert.style.background = (type === 'danger') ? '#f8d7da' : (type === 'warning' ? '#fff3cd' : '#d1ecf1');
+    alert.style.color = '#333';
+    container.appendChild(alert);
+    setTimeout(() => alert.remove(), 4000);
 }
 
 function calculateTotal() {
@@ -122,4 +259,129 @@ function calculateTotal() {
     
     document.getElementById('totalAmount').textContent = total.toLocaleString('id-ID');
 }
+
+// Prevent sending Sales Order when requested quantity exceeds current stock
+window.addEventListener('DOMContentLoaded', function() {
+    const soForm = document.getElementById('soForm');
+    if (!soForm) return;
+    soForm.addEventListener('submit', function(e) {
+        const select = document.getElementById('productSelect');
+        const option = select && select.options[select.selectedIndex];
+        const stock = option && option.dataset.qty !== undefined ? parseFloat(option.dataset.qty) : null;
+        const qty = parseFloat(document.getElementById('quantity').value) || 0;
+        if (stock !== null && !isNaN(stock) && qty > stock) {
+            showAlert('Jumlah melebihi stok tersedia', 'danger');
+            e.preventDefault();
+            return false;
+        }
+    });
+    // Clear poll on page unload
+    window.addEventListener('beforeunload', function() {
+        if (window.soProductStockPoll) {
+            clearInterval(window.soProductStockPoll);
+            window.soProductStockPoll = null;
+        }
+    });
+});
+
+// Load inventory products and populate product select with stock and price
+function loadInventoryProducts() {
+    fetch('/inventory-api/list')
+        .then(r => r.json())
+        .then(resp => {
+            if (!resp || !resp.success) return;
+            const select = document.getElementById('productSelect');
+            if (!select) return;
+            const cur = select.value;
+            select.innerHTML = '<option value="">-- Pilih Produk --</option>';
+            resp.data.forEach(p => {
+                const price = (p.selling_price !== undefined) ? p.selling_price : (p.price ?? 0);
+                const qty = (p.quantity !== undefined) ? p.quantity : (p.qty_available ?? 0);
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.dataset.name = p.name || '';
+                opt.dataset.price = price;
+                opt.dataset.qty = qty;
+                opt.dataset.category = p.category || '';
+                opt.dataset.code = p.sku || p.default_code || '';
+                opt.textContent = `${p.name} (Rp ${formatCurrency(price)}) — Stok: ${qty}`;
+                select.appendChild(opt);
+            });
+            if (cur) {
+                select.value = cur;
+                // Immediately update UI from the selected option
+                updateProductInfo();
+            }
+        })
+        .catch(err => console.error('Error loading inventory products:', err));
+}
+
+// Load automatically on page load
+window.addEventListener('DOMContentLoaded', function() {
+    try { loadCustomers(); } catch (e) {}
+    try { loadInventoryProducts(); } catch (e) {}
+});
+
+// Load customers dynamically (includes Odoo + local entries)
+function loadCustomers() {
+    fetch('/api.php?action=list_customers')
+        .then(r => r.json())
+        .then(data => {
+            if (data && data.success && Array.isArray(data.data)) {
+                const sel = document.getElementById('soCustomer');
+                if (!sel) return;
+                const cur = sel.value;
+                sel.innerHTML = '<option value="">-- Pilih Customer --</option>';
+
+                const seen = new Set();
+                // Odoo entries first
+                const sorted = data.data.slice().sort((a,b) => ((a.local?1:0) - (b.local?1:0)));
+
+                sorted.forEach(c => {
+                    const name = c.name || '';
+                    const email = c.email || '';
+                    const phone = c.phone || '';
+                    const key = (name + '|' + email + '|' + phone).toLowerCase().trim();
+                    if (seen.has(key)) return;
+                    seen.add(key);
+
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = `${name}${email? ' — ' + email : ''}${phone? ' / ' + phone : ''}${c.local ? ' (lokal)' : ''}`;
+                    if (c.local) opt.dataset.local = '1';
+                    if (c.email) opt.dataset.email = c.email;
+                    if (c.phone) opt.dataset.phone = c.phone;
+                    sel.appendChild(opt);
+                });
+
+                if (cur) sel.value = cur;
+            }
+        })
+        .catch(err => console.error('Error loading customers:', err));
+}
+
+// Auto-load customers on page load
+window.addEventListener('DOMContentLoaded', function() {
+    try { loadCustomers(); } catch (e) {}
+
+    const delBtn = document.getElementById('deleteCustomerBtn');
+    if (delBtn) {
+        delBtn.addEventListener('click', function() {
+            const sel = document.getElementById('soCustomer');
+            if (!sel) return;
+            const val = sel.value;
+            if (!val) { showAlert('Pilih customer terlebih dahulu', 'warning'); return; }
+            if (!confirm('Hapus customer terpilih? Ini akan menghapusnya dari lokal atau Odoo tergantung asalnya.')) return;
+            deleteCustomer(val).then(resp => {
+                if (resp && resp.success) {
+                    showAlert(resp.message || 'Customer dihapus', 'success');
+                    const opt = sel.querySelector('option[value="' + val + '"]'); if (opt) opt.remove();
+                    sel.value = '';
+                } else {
+                    showAlert('Gagal menghapus: ' + (resp.error || 'Unknown'), 'danger');
+                }
+            }).catch(err => showAlert('Error: ' + err.message, 'danger'));
+        });
+    }
+});
 </script>

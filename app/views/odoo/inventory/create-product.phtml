@@ -19,10 +19,44 @@
         </div>
 
         <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">Category *</label>
+            <select name="category" required 
+                    style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; font-size: 14px;">
+                <option value="">- Select Category -</option>
+                <?php foreach ($categories as $cat): ?>
+                    <option value="<?= $cat->name ?>"><?= $cat->name ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">Product Type *</label>
+            <select name="type" required 
+                    style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; font-size: 14px;">
+                <option value="consu">Barang (Goods)</option>
+                <option value="service">Jasa (Service)</option>
+                <option value="combo">Combo</option>
+            </select>
+        </div>
+
+        <div style="margin-bottom: 20px;">
             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">Sale Price *</label>
-            <input type="number" name="price" required step="0.01" 
+            <input type="number" name="selling_price" required step="0.01" 
                    style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; font-size: 14px;"
                    placeholder="0.00">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">Cost Price</label>
+            <input type="number" name="cost_price" step="0.01" 
+                   style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; font-size: 14px;"
+                   placeholder="0.00">
+        </div>
+
+        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
+            <p style="margin: 0; font-size: 13px; color: #856404;">
+                <strong>📝 Catatan:</strong> Stok akan dimulai dari 0. Untuk menambah stok setelah membuat produk, gunakan Odoo → Inventory → Adjustments.
+            </p>
         </div>
 
         <div style="display: flex; gap: 10px; margin-top: 30px;">

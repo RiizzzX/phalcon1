@@ -82,34 +82,58 @@
         </div>
         
         <?php if (isset($order_lines) && count($order_lines) > 0): ?>
-        <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px;">
-            <h3 style="margin: 0 0 20px 0; color: #2c3e50;">📦 Order Lines</h3>
-            
-            <table style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr style="background: #ecf0f1;">
-                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #bdc3c7;">Produk</th>
-                        <th style="padding: 12px; text-align: center; border-bottom: 2px solid #bdc3c7;">Qty</th>
-                        <th style="padding: 12px; text-align: right; border-bottom: 2px solid #bdc3c7;">Harga</th>
-                        <th style="padding: 12px; text-align: right; border-bottom: 2px solid #bdc3c7;">Subtotal</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($order_lines as $line): ?>
-                    <tr style="border-bottom: 1px solid #ecf0f1;">
-                        <td style="padding: 12px;">
-                            <?= htmlspecialchars(is_array($line['product_id']) ? $line['product_id'][1] : $line['product_id']) ?>
-                        </td>
-                        <td style="padding: 12px; text-align: center;"><?= $line['product_uom_qty'] ?? 0 ?></td>
-                        <td style="padding: 12px; text-align: right;">Rp <?= number_format($line['price_unit'] ?? 0, 0, ',', '.') ?></td>
-                        <td style="padding: 12px; text-align: right; font-weight: 600;">
-                            Rp <?= number_format($line['price_subtotal'] ?? 0, 0, ',', '.') ?>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+        <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                <h3 style="margin: 0; color: #2c3e50;">📦 Order Lines</h3>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <small style="color:#7f8c8d;">Tabel besar disembunyikan untuk performa</small>
+                    <button id="toggleOrderLines" class="btn btn-secondary" style="padding:8px 12px;">Tampilkan Order Lines (<?= count($order_lines) ?>)</button>
+                </div>
+            </div>
+
+            <div id="orderLinesSection" style="display: none; margin-top: 15px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #ecf0f1;">
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #bdc3c7;">Produk</th>
+                            <th style="padding: 12px; text-align: center; border-bottom: 2px solid #bdc3c7;">Qty</th>
+                            <th style="padding: 12px; text-align: right; border-bottom: 2px solid #bdc3c7;">Harga</th>
+                            <th style="padding: 12px; text-align: right; border-bottom: 2px solid #bdc3c7;">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($order_lines as $line): ?>
+                        <tr style="border-bottom: 1px solid #ecf0f1;">
+                            <td style="padding: 12px;">
+                                <?= htmlspecialchars(is_array($line['product_id']) ? $line['product_id'][1] : $line['product_id']) ?>
+                            </td>
+                            <td style="padding: 12px; text-align: center;"><?= $line['product_uom_qty'] ?? 0 ?></td>
+                            <td style="padding: 12px; text-align: right;">Rp <?= number_format($line['price_unit'] ?? 0, 0, ',', '.') ?></td>
+                            <td style="padding: 12px; text-align: right; font-weight: 600;">
+                                Rp <?= number_format($line['price_subtotal'] ?? 0, 0, ',', '.') ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const btn = document.getElementById('toggleOrderLines');
+                const sec = document.getElementById('orderLinesSection');
+                if (!btn || !sec) return;
+                btn.addEventListener('click', function(){
+                    if (sec.style.display === 'none') {
+                        sec.style.display = 'block';
+                        btn.textContent = 'Sembunyikan Order Lines (<?= count($order_lines) ?>)';
+                    } else {
+                        sec.style.display = 'none';
+                        btn.textContent = 'Tampilkan Order Lines (<?= count($order_lines) ?>)';
+                    }
+                });
+            });
+        </script>
         <?php endif; ?>
         
         <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">

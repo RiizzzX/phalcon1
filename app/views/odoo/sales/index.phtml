@@ -1,72 +1,681 @@
-<?= $this->getContent() ?>
-
-<div class="container" style="padding: 40px 20px;">
-    <div style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
-        <div>
-            <h1 style="margin: 0 0 10px 0; color: #2c3e50;">📝 <?= $title ?></h1>
-            <p style="margin: 0; color: #7f8c8d;">Manage your sales orders</p>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sales Orders Management</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; color: #333; }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        
+        .header {
+            background: linear-gradient(135deg, #00c9a7 0%, #00a878 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 201, 167, 0.4);
+        }
+        
+        .header h1 { margin-bottom: 10px; font-size: 28px; }
+        .header p { opacity: 0.9; font-size: 16px; }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-block;
+            text-decoration: none;
+        }
+        
+        .btn-primary { background: linear-gradient(135deg, #00c9a7 0%, #00a878 100%); color: white; }
+        .btn-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
+        .btn-danger { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); color: white; }
+        .btn-small { padding: 8px 16px; font-size: 13px; margin: 3px; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        
+        .action-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
+        th { background: linear-gradient(135deg, #00c9a7 0%, #00a878 100%); color: white; padding: 15px; text-align: left; font-weight: 600; }
+        td { padding: 15px; border-bottom: 1px solid #ecf0f1; }
+        tbody tr:hover { background: #f8f9fa; }
+        
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        
+        .badge-draft { background: #e2e3e5; color: #383d41; }
+        .badge-sent { background: #cce5ff; color: #004085; }
+        .badge-sale { background: #d4edda; color: #155724; }
+        .badge-done { background: #d1ecf1; color: #0c5460; }
+        .badge-cancel { background: #f8d7da; color: #721c24; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal.show { display: flex !important; }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 600px; margin: auto; }
+        .modal-header { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #ecf0f1; }
+        .modal-footer { margin-top: 25px; padding-top: 15px; border-top: 1px solid #ecf0f1; text-align: right; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: #00c9a7;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 201, 167, 0.1);
+        }
+        
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .alert.show { display: block; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-danger { background: #f8d7da; color: #721c24; }
+        
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #00c9a7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="margin-bottom: 20px; font-size: 14px;">
+            <a href="/odoo-dashboard" style="color: #00c9a7; text-decoration: none;">📊 Dashboard</a> / 
+            <span style="color: #7f8c8d;">💰 Sales Orders</span>
         </div>
-        <a href="/odoo-sales/create" class="btn btn-primary" style="padding: 12px 24px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; text-decoration: none; border-radius: 8px;">
-            ➕ New Sale
-        </a>
-    </div>
 
-    <?php if (empty($orders)): ?>
-        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; border-radius: 8px;">
-            <strong>⚠️ No Sales Orders Found</strong>
-            <p style="margin: 10px 0 0 0;">Create your first sales order to get started.</p>
+        <div class="header">
+            <h1>💰 Sales Orders</h1>
+            <p>Kelola pesanan penjualan kepada pelanggan</p>
         </div>
-    <?php else: ?>
-        <div style="background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden;">
-            <table style="width: 100%; border-collapse: collapse;">
-                <thead style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+
+        <div id="alertContainer"></div>
+
+        <div class="action-bar">
+            <button class="btn btn-success" id="btnNewSO">➕ Buat Sales Order Baru</button>
+            <!-- 'Kelola Customers' dihilangkan karena sekarang dikelola lewat Partners -->
+            <button class="btn btn-success" id="btnAddCustomer" data-open-customer>➕ Tambah Customer</button>
+            <button class="btn btn-primary" id="btnRefresh">🔄 Refresh</button>
+            <a href="/odoo-invoicing" class="btn btn-primary">📄 Lihat Invoice</a>
+            <a href="/odoo-dashboard" class="btn btn-primary">📊 Kembali</a>
+        </div>
+
+        <div id="loading" style="text-align: center; padding: 40px;">
+            <div class="spinner"></div>
+            <p style="margin-top: 15px; color: #7f8c8d;">Memuat data...</p>
+        </div>
+
+        <div id="tableContainer" style="display: none;">
+            <table id="soTable">
+                <thead>
                     <tr>
-                        <th style="padding: 15px; text-align: left;">Order #</th>
-                        <th style="padding: 15px; text-align: left;">Customer</th>
-                        <th style="padding: 15px; text-align: left;">Date</th>
-                        <th style="padding: 15px; text-align: right;">Amount</th>
-                        <th style="padding: 15px; text-align: center;">Status</th>
-                        <th style="padding: 15px; text-align: center;">Actions</th>
+                        <th>No. SO</th>
+                        <th>Pelanggan</th>
+                        <th>Tanggal</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <?php foreach ($orders as $order): ?>
-                        <tr style="border-bottom: 1px solid #ecf0f1;">
-                            <td style="padding: 15px; font-family: monospace; font-weight: 600; color: #2c3e50;">
-                                <?= $order['name'] ?>
-                            </td>
-                            <td style="padding: 15px; color: #2c3e50;">
-                                <?= is_array($order['partner_id']) ? $order['partner_id'][1] : $order['partner_id'] ?>
-                            </td>
-                            <td style="padding: 15px; color: #7f8c8d;">
-                                <?= date('Y-m-d', strtotime($order['date_order'])) ?>
-                            </td>
-                            <td style="padding: 15px; text-align: right; font-weight: 600; color: #27ae60;">
-                                Rp <?= number_format($order['amount_total'], 0, ',', '.') ?>
-                            </td>
-                            <td style="padding: 15px; text-align: center;">
-                                <?php
-                                $statusColors = [
-                                    'sale' => '#27ae60',
-                                    'done' => '#3498db',
-                                    'draft' => '#95a5a6',
-                                    'cancel' => '#e74c3c'
-                                ];
-                                $color = $statusColors[$order['state']] ?? '#95a5a6';
-                                ?>
-                                <span style="padding: 6px 12px; background: <?= $color ?>; color: white; border-radius: 20px; font-size: 12px;">
-                                    <?= strtoupper($order['state']) ?>
-                                </span>
-                            </td>
-                            <td style="padding: 15px; text-align: center;">
-                                <a href="/odoo-sales/view/<?= $order['id'] ?>" style="color: #3498db; text-decoration: none;">👁️ View</a>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
+                <tbody id="soTableBody"></tbody>
             </table>
         </div>
-    <?php endif; ?>
+
+        <div id="emptyState" style="display: none; text-align: center; padding: 60px 20px; color: #7f8c8d;">
+            <div style="font-size: 48px; margin-bottom: 20px;">📭</div>
+            <h3 style="color: #2c3e50;">Tidak ada Sales Order</h3>
+            <p>Mulai buat sales order baru dengan mengklik tombol di atas</p>
+        </div>
+    </div>
+
+    <?php include __DIR__ . '/_customer_modal.phtml'; ?>
+
+    <!-- Modal: Create SO -->
+    <div class="modal" id="modalSO">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Buat Sales Order Baru</h2>
+            </div>
+
+            <form id="formSO">
+                <div class="form-group">
+                    <label for="soCustomer">Pelanggan *</label>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <select id="soCustomer" required style="flex:1;">
+                            <option value="">-- Pilih Pelanggan --</option>
+                        </select>
+                        <button type="button" id="deleteCustomerModalBtn" class="btn btn-danger btn-small" title="Hapus customer terpilih">🗑️</button>
+                    </div>
+                </div>
+
+                <div id="soLinesContainer">
+                    <label style="font-weight: 600; color: #2c3e50; margin-bottom: 15px;">Detail Produk</label>
+                    <div class="so-line" style="border: 2px solid #ecf0f1; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <div class="form-group">
+                            <label>Produk *</label>
+                            <select class="line-product" required>
+                                <option value="">-- Pilih Produk --</option>
+                            </select>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                            <div class="form-group">
+                                <label>Quantity *</label>
+                                <input type="number" class="line-qty" min="1" value="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Harga per Unit *</label>
+                                <input type="number" class="line-price" min="0" step="0.01" value="0" required>
+                            </div>
+
+                            <div class="form-group" style="display: flex; align-items: flex-end;">
+                                <button type="button" class="btn btn-danger btn-small" style="width: 100%; margin-bottom: 2px;" onclick="removeSOLine(this)">Hapus</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-primary btn-small" onclick="addSOLine()">+ Tambah Produk</button>
+            </form>
+
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="btnCloseModal">Batal</button>
+                <button class="btn btn-success" id="btnSaveSO">💾 Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Confirm -->
+    <div class="modal" id="modalConfirm">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Konfirmasi</h2>
+            </div>
+            <p id="confirmMessage" style="margin-bottom: 20px;"></p>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="btnConfirmNo">Batal</button>
+                <button class="btn btn-danger" id="btnConfirmYes">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api.php';
+        let currentAction = null;
+        let currentSOId = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSalesOrders();
+            loadCustomers();
+            loadProducts();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('btnNewSO').addEventListener('click', openNewSOModal);
+            const addCustomerBtn = document.getElementById('btnAddCustomer');
+            if (addCustomerBtn) addCustomerBtn.addEventListener('click', function() { if (typeof showCustomerModal === 'function') showCustomerModal(); else document.querySelector('[data-open-customer]')?.click(); });
+            document.getElementById('btnRefresh').addEventListener('click', loadSalesOrders);
+            document.getElementById('btnSaveSO').addEventListener('click', saveSO);
+            const delModalBtn = document.getElementById('deleteCustomerModalBtn');
+            if (delModalBtn) delModalBtn.addEventListener('click', function() {
+                const sel = document.getElementById('soCustomer');
+                if (!sel) return;
+                const val = sel.value;
+                if (!val) { showAlert('Pilih customer terlebih dahulu', 'warning'); return; }
+                if (!confirm('Hapus customer terpilih?')) return;
+                // call API
+                fetch('/api.php?action=delete_customer', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: val }) })
+                    .then(r => r.json())
+                    .then(resp => {
+                        if (resp && resp.success) {
+                            showAlert(resp.message || 'Customer dihapus', 'success');
+                            const opt = sel.querySelector('option[value="' + val + '"]'); if (opt) opt.remove(); sel.value = '';
+                        } else {
+                            showAlert('Gagal menghapus: ' + (resp.error || 'Unknown'), 'danger');
+                        }
+                    }).catch(err => showAlert('Error: ' + err.message, 'danger'));
+            });
+            document.getElementById('btnCloseModal').addEventListener('click', closeModal);
+            document.getElementById('btnConfirmYes').addEventListener('click', executeConfirmAction);
+            document.getElementById('btnConfirmNo').addEventListener('click', closeConfirmModal);
+        }
+
+        function loadSalesOrders() {
+            showLoading(true);
+            fetch(`${API_URL}?action=list_sales_orders`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        renderSOTable(data.data);
+                    } else {
+                        showAlert('Gagal memuat data', 'danger');
+                    }
+                    showLoading(false);
+                })
+                .catch(err => {
+                    showAlert('Error: ' + err.message, 'danger');
+                    showLoading(false);
+                });
+        }
+
+        // Load customers (includes Odoo + local entries) and populate #soCustomer
+        function loadCustomers() {
+            fetch('/api.php?action=list_customers')
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.success && Array.isArray(data.data)) {
+                        const sel = document.getElementById('soCustomer');
+                        if (!sel) return;
+                        const cur = sel.value;
+                        sel.innerHTML = '<option value="">-- Pilih Pelanggan --</option>';
+                        data.data.forEach(c => {
+                            const opt = document.createElement('option');
+                            opt.value = c.id;
+                            opt.textContent = c.name + (c.local ? ' (lokal)' : '');
+                            sel.appendChild(opt);
+                        });
+                        if (cur) sel.value = cur;
+                    }
+                })
+                .catch(err => console.error('Error loading customers:', err));
+        }
+
+        function renderSOTable(orders) {
+            const tbody = document.getElementById('soTableBody');
+            const tableContainer = document.getElementById('tableContainer');
+            const emptyState = document.getElementById('emptyState');
+
+            if (!orders || orders.length === 0) {
+                tableContainer.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            orders.forEach(order => {
+                const badge = `<span class="badge badge-${order.state}">${getStateLabel(order.state)}</span>`;
+                let actionBtns = '';
+                
+                if (order.state === 'draft') {
+                    actionBtns += `<button class="btn btn-success btn-small" onclick="confirmAction('confirm', ${order.id}, 'Konfirmasi SO ini?')">✅ Konfirmasi</button>`;
+                    actionBtns += `<button class="btn btn-danger btn-small" onclick="confirmAction('cancel', ${order.id}, 'Batalkan SO ini?')">❌ Batalkan</button>`;
+                }
+
+                // Show delete only for confirmed (sale) or cancelled orders per preference
+                if (order.state === 'sale' || order.state === 'cancel') {
+                    actionBtns += `<button class="btn btn-danger btn-small" onclick="confirmAction('delete', ${order.id}, 'Hapus SO ini?')">🗑️ Hapus</button>`;
+                }
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${order.name}</strong></td>
+                    <td>${order.customer_name || 'N/A'}</td>
+                    <td>${formatDate(order.date_order)}</td>
+                    <td>Rp ${formatCurrency(order.amount_total)}</td>
+                    <td>${badge}</td>
+                    <td>${actionBtns}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            tableContainer.style.display = 'block';
+            emptyState.style.display = 'none';
+        }
+
+        function getStateLabel(state) {
+            const labels = {
+                'draft': '📝 Draft',
+                'sent': '📤 Dikirim',
+                'sale': '✅ Dikonfirmasi',
+
+                'done': '✔️ Selesai',
+                'cancel': '❌ Dibatalkan'
+            };
+            return labels[state] || state;
+        }
+
+        function loadCustomers() {
+            fetch(`${API_URL}?action=list_customers`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        const select = document.getElementById('soCustomer');
+                        select.innerHTML = '<option value="">-- Pilih Pelanggan --</option>';
+                        data.data.forEach(customer => {
+                            const option = document.createElement('option');
+                            option.value = customer.id;
+                            option.textContent = customer.name;
+                            select.appendChild(option);
+                        });
+                    }
+                })
+                .catch(err => console.error('Error:', err));
+        }
+
+        function loadProducts() {
+            fetch('/inventory-api/list')
+                .then(r => r.json())
+                .then(data => {
+                    if (!data || !data.success) return;
+                    const selects = document.querySelectorAll('.so-line .line-product');
+                    selects.forEach(select => {
+                        select.innerHTML = '<option value="">-- Pilih Produk --</option>';
+                        data.data.forEach(product => {
+                            const price = (product.selling_price !== undefined) ? product.selling_price : (product.list_price ?? 0);
+                            const qty = (product.quantity !== undefined) ? product.quantity : (product.qty_available ?? 0);
+                            const option = document.createElement('option');
+                            // mark inventory items so API can map them on submit
+                            option.value = 'inventory-' + product.id;
+                            option.dataset.price = price;
+                            option.dataset.qty = qty;
+                            option.dataset.name = product.name || '';
+                            option.textContent = `${product.name} (Rp ${formatCurrency(price)}) — Stok: ${qty}`;
+                            select.appendChild(option);
+                        });
+
+                        // attach change handler to auto-fill price and qty limits
+                        select.addEventListener('change', function() { onLineProductChange(this); });
+                    });
+                })
+                .catch(err => console.error('Error:', err));
+        }
+
+        function onLineProductChange(select) {
+            const line = select.closest('.so-line');
+            if (!line) return;
+            const priceInput = line.querySelector('.line-price');
+            const qtyInput = line.querySelector('.line-qty');
+            const option = select.options[select.selectedIndex];
+            if (option && option.value) {
+                const price = parseFloat(option.dataset.price) || 0;
+                const qty = option.dataset.qty !== undefined && option.dataset.qty !== '' ? parseFloat(option.dataset.qty) : null;
+                if (priceInput) priceInput.value = price;
+                if (qtyInput) {
+                    if (qty !== null && !isNaN(qty)) qtyInput.max = qty; else qtyInput.removeAttribute('max');
+                }
+                // do an immediate check on qty vs stock
+                checkLineQtyLimit(line);
+            }
+        }
+
+        function checkLineQtyLimit(line) {
+            const qtyInput = line.querySelector('.line-qty');
+            const select = line.querySelector('.line-product');
+            const option = select && select.options[select.selectedIndex];
+            const stock = option && option.dataset.qty !== undefined ? parseFloat(option.dataset.qty) : null;
+            const qty = qtyInput ? parseFloat(qtyInput.value) || 0 : 0;
+
+            const existingWarn = line.querySelector('.line-stock-warn');
+            if (stock !== null && !isNaN(stock) && qty > stock) {
+                if (!existingWarn) {
+                    const warn = document.createElement('div');
+                    warn.className = 'line-stock-warn';
+                    warn.style.background = '#fff3cd';
+                    warn.style.border = '1px solid #ffc107';
+                    warn.style.padding = '8px';
+                    warn.style.borderRadius = '6px';
+                    warn.style.marginTop = '10px';
+                    warn.style.color = '#856404';
+                    warn.textContent = '⚠️ Jumlah melebihi stok tersedia (' + stock + ')';
+                    qtyInput.parentElement.appendChild(warn);
+                } else {
+                    existingWarn.textContent = '⚠️ Jumlah melebihi stok tersedia (' + stock + ')';
+                }
+                return true;
+            } else {
+                if (existingWarn) existingWarn.remove();
+                return false;
+            }
+        }
+
+        function addSOLine() {
+            const container = document.getElementById('soLinesContainer');
+            const div = document.createElement('div');
+            div.className = 'so-line';
+            div.style.border = '2px solid #ecf0f1';
+            div.style.padding = '15px';
+            div.style.borderRadius = '8px';
+            div.style.marginBottom = '15px';
+            div.innerHTML = `
+                <div class="form-group">
+                    <label>Produk *</label>
+                    <select class="line-product" required>
+                        <option value="">-- Pilih Produk --</option>
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Quantity *</label>
+                        <input type="number" class="line-qty" min="1" value="1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Harga per Unit *</label>
+                        <input type="number" class="line-price" min="0" step="0.01" value="0" required>
+                    </div>
+
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
+                        <button type="button" class="btn btn-danger btn-small" style="width: 100%; margin-bottom: 2px;" onclick="removeSOLine(this)">Hapus</button>
+                    </div>
+                </div>
+            `;
+            container.insertBefore(div, container.lastElementChild);
+            loadProducts();
+            // attach event listeners for new line
+            const newSelect = div.querySelector('.line-product');
+            const newQty = div.querySelector('.line-qty');
+            if (newSelect) newSelect.addEventListener('change', function(){ onLineProductChange(this); });
+            if (newQty) newQty.addEventListener('input', function(){ checkLineQtyLimit(this.closest('.so-line')); });
+        }
+
+        function removeSOLine(btn) {
+            const lines = document.querySelectorAll('.so-line');
+            if (lines.length > 1) {
+                btn.closest('.so-line').remove();
+            } else {
+                showAlert('Minimal harus ada satu produk', 'warning');
+            }
+        }
+
+        function saveSO() {
+            const customerId = document.getElementById('soCustomer').value;
+            if (!customerId) {
+                showAlert('Pilih pelanggan terlebih dahulu', 'warning');
+                return;
+            }
+
+            const lines = [];
+            let invalid = false;
+            document.querySelectorAll('.so-line').forEach(line => {
+                const productSel = line.querySelector('.line-product');
+                const productId = productSel ? productSel.value : null;
+                const qty = parseFloat(line.querySelector('.line-qty').value);
+                const price = parseFloat(line.querySelector('.line-price').value);
+
+                if (!productId || !qty || qty <= 0) {
+                    invalid = true;
+                    return;
+                }
+
+                // Validate against stock if available
+                const option = productSel.options[productSel.selectedIndex];
+                const stock = option && option.dataset.qty !== undefined ? parseFloat(option.dataset.qty) : null;
+                if (stock !== null && !isNaN(stock) && qty > stock) {
+                    showAlert('Salah satu item melebihi stok tersedia', 'danger');
+                    invalid = true;
+                    return;
+                }
+
+                lines.push({
+                    product_id: productId,
+                    quantity: qty,
+                    price: price
+                });
+            });
+
+            if (invalid) return;
+
+            if (lines.length === 0) {
+                showAlert('Tambahkan minimal satu produk', 'warning');
+                return;
+            }
+
+            fetch(`${API_URL}?action=create_sales_order`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'create_sales_order', // fallback
+                    customer_id: customerId,
+                    lines: lines
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Sales Order berhasil dibuat!', 'success');
+                    closeModal();
+                    loadSalesOrders();
+                } else {
+                    showAlert('Error: ' + data.error, 'danger');
+                }
+            })
+            .catch(err => showAlert('Error: ' + err.message, 'danger'));
+        }
+
+        function confirmAction(action, soId, message) {
+            currentAction = action;
+            currentSOId = soId;
+            document.getElementById('confirmMessage').textContent = message;
+            document.getElementById('modalConfirm').classList.add('show');
+        }
+
+        function executeConfirmAction() {
+            closeConfirmModal();
+
+            let apiAction = '';
+            if (currentAction === 'confirm') apiAction = 'confirm_sales_order';
+            else if (currentAction === 'cancel') apiAction = 'cancel_sales_order';
+            else if (currentAction === 'delete') apiAction = 'delete_sales_order';
+
+            if (!apiAction) return;
+
+            fetch(`${API_URL}?action=${apiAction}&id=${currentSOId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        const msg = currentAction === 'confirm' ? 'Sales Order dikonfirmasi!' : 'Sales Order dibatalkan!';
+                        showAlert(msg, 'success');
+                        loadSalesOrders();
+                    } else {
+                        showAlert('Error: ' + data.error, 'danger');
+                    }
+                })
+                .catch(err => showAlert('Error: ' + err.message, 'danger'));
+        }
+
+        function openNewSOModal() {
+            document.getElementById('formSO').reset();
+            // Reload products so stock/price are fresh
+            loadProducts();
+            // Attach change handlers to the initial line's product select and qty
+            setTimeout(() => {
+                const initialLine = document.querySelector('.so-line');
+                if (initialLine) {
+                    const sel = initialLine.querySelector('.line-product');
+                    const qty = initialLine.querySelector('.line-qty');
+                    if (sel) sel.addEventListener('change', function(){ onLineProductChange(this); });
+                    if (qty) qty.addEventListener('input', function(){ checkLineQtyLimit(this.closest('.so-line')); });
+                }
+            }, 150);
+            document.getElementById('modalSO').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('modalSO').classList.remove('show');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('modalConfirm').classList.remove('show');
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('tableContainer').style.display = show ? 'none' : 'block';
+        }
+
+        function showAlert(message, type = 'info') {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} show`;
+            alert.textContent = message;
+            container.appendChild(alert);
+
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('id-ID', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function formatCurrency(value) {
+            return parseFloat(value).toLocaleString('id-ID', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            });
+        }
+    </script>
+</body>
+</html>
+
+    <!-- Server-side sales orders table removed — client-side table (#soTable) is used for rendering -->
     
     <div style="margin-top: 30px; text-align: center;">
         <a href="/odoo-dashboard" style="color: #3498db; text-decoration: none;">← Back to Dashboard</a>

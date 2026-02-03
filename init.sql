@@ -1,45 +1,75 @@
-CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL
-);
+-- Initial Database Schema for Phalcon + Odoo Integration
+-- Created on: 2026-02-03
 
-INSERT INTO users (name, email) VALUES
-('Budi', 'budi@example.com'),
-('Ani', 'ani@example.com');
+SET NAMES utf8;
+SET time_zone = '+00:00';
+SET foreign_key_checks = 0;
+SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 
-CREATE TABLE IF NOT EXISTS inventory (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    quantity INT NOT NULL DEFAULT 0,
-    category VARCHAR(100),
-    price DECIMAL(10, 2),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+-- 1. Inventory Table
+CREATE TABLE IF NOT EXISTS `inventory` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `description` text,
+  `quantity` decimal(10,2) DEFAULT '0.00',
+  `category` varchar(100) DEFAULT 'Uncategorized',
+  `selling_price` decimal(10,2) DEFAULT '0.00',
+  `cost_price` decimal(10,2) DEFAULT '0.00',
+  `sku` varchar(255) DEFAULT NULL,
+  `product_type` varchar(50) DEFAULT 'product',
+  `status` varchar(50) DEFAULT 'active',
+  `odoo_id` int(11) DEFAULT NULL,
+  `synced_to_odoo` tinyint(1) DEFAULT '0',
+  `last_sync_at` datetime DEFAULT NULL,
+  `sync_notes` text,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_odoo_id` (`odoo_id`),
+  KEY `idx_sku` (`sku`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO inventory (name, description, quantity, category, price) VALUES
-('Laptop', 'Dell XPS 13', 5, 'Electronics', 1500.00),
-('Monitor', 'LG 27 inch', 10, 'Electronics', 300.00),
-('Keyboard', 'Mechanical RGB', 20, 'Accessories', 150.00);
+-- 2. Categories Table
+CREATE TABLE IF NOT EXISTS `categories` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL UNIQUE,
+  `description` text,
+  `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Table untuk log rental dari Odoo
-CREATE TABLE IF NOT EXISTS rental_logs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    odoo_rental_id INT NOT NULL,
-    rental_number VARCHAR(50),
-    customer_name VARCHAR(255) NOT NULL,
-    customer_phone VARCHAR(50),
-    equipment_name VARCHAR(255),
-    equipment_code VARCHAR(50),
-    rental_date DATE,
-    return_date DATE,
-    total_amount DECIMAL(15, 2),
-    status VARCHAR(50),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_odoo_rental (odoo_rental_id),
-    INDEX idx_customer (customer_name),
-    INDEX idx_status (status)
-);
+INSERT IGNORE INTO `categories` (`name`, `description`) VALUES
+('Electronics', 'Electronic devices and gadgets'),
+('Accessories', 'Computer and device accessories'),
+('Office', 'Office supplies and equipment'),
+('Other', 'Other products');
+
+-- 3. Users Table
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `password` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 4. Rental Logs Table
+CREATE TABLE IF NOT EXISTS `rental_logs` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `odoo_rental_id` int(11) DEFAULT NULL,
+  `rental_number` varchar(50) DEFAULT NULL,
+  `customer_name` varchar(255) DEFAULT NULL,
+  `customer_phone` varchar(50) DEFAULT NULL,
+  `equipment_name` varchar(255) DEFAULT NULL,
+  `equipment_code` varchar(50) DEFAULT NULL,
+  `rental_date` date DEFAULT NULL,
+  `return_date` date DEFAULT NULL,
+  `total_amount` decimal(10,2) DEFAULT '0.00',
+  `status` varchar(50) DEFAULT 'draft',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `synced_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_odoo_rental` (`odoo_rental_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

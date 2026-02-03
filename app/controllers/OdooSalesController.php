@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Controllers;
+
 use App\Library\OdooClient;
 
 class OdooSalesController extends OdooControllerBase

@@ -11,8 +11,12 @@ services:
       - mysql
       - odoo
     environment:
+      DB_HOST: mysql
+      DB_NAME: phalcon_db
+      DB_USERNAME: root
+      DB_PASSWORD: secret
       ODOO_URL: "http://odoo:8069"
-      ODOO_DB: "postgres"
+      ODOO_DB: "odoo19"
       ODOO_USERNAME: "admin"
       ODOO_PASSWORD: "admin"
     restart: unless-stopped
@@ -37,27 +41,32 @@ services:
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     environment:
+
       PMA_HOST: mysql
       PMA_USER: root
       PMA_PASSWORD: secret
     ports:
       - "3307:80"
-    depends_on:
+    depends_on: 
+
+
       - mysql
     restart: unless-stopped
 
   postgres:
-    image: postgres:15
+    image: postgres:16
     environment:
-      - POSTGRES_DB=postgres
+      - POSTGRES_DB=odoo19
       - POSTGRES_USER=odoo
       - POSTGRES_PASSWORD=odoo
     volumes:
       - coba_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     restart: unless-stopped
 
   odoo:
-    image: odoo:17.0
+    image: odoo:19
     depends_on:
       - postgres
     ports:
@@ -66,6 +75,8 @@ services:
       - HOST=postgres
       - USER=odoo
       - PASSWORD=odoo
+      - DB=odoo19
+      - ODOO_DEMO=False
     volumes:
       - coba_odoo_data:/var/lib/odoo
       - ./addons:/mnt/extra-addons
@@ -74,6 +85,4 @@ services:
 volumes:
   mysql_data:
   coba_postgres_data:
-    external: true
   coba_odoo_data:
-    external: true

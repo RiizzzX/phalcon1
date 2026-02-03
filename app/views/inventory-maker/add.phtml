@@ -1,0 +1,56 @@
+<div class="container mt-4">
+    <h1>➕ Add Product</h1>
+    
+    <div class="card" style="max-width: 600px;">
+        <div class="card-body">
+            <form method="POST" action="/inventory-maker/add">
+                <div class="mb-3">
+                    <label class="form-label">Name *</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">SKU</label>
+                    <input type="text" name="sku" class="form-control">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Category</label>
+                    <input type="text" name="category" class="form-control" placeholder="e.g. Electronics">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Sale Price *</label>
+                    <input type="number" name="selling_price" class="form-control" step="0.01" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Cost Price</label>
+                    <input type="number" name="cost_price" class="form-control" step="0.01">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Initial Quantity</label>
+                    <input type="number" name="quantity" class="form-control" value="0" min="0">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Type</label>
+                    <select name="product_type" class="form-control">
+                        <option value="consu">Consumable</option>
+                        <option value="product">Storable</option>
+                        <option value="service">Service</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="form-control" rows="3"></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-success">Create</button>
+                <a href="/inventory-maker/list" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
