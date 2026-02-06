@@ -17,9 +17,22 @@ class OdooClient
     public function __construct()
     {
         // Konfigurasi koneksi Odoo dari environment variables
-        $this->url = getenv('ODOO_URL') ?: 'http://odoo:8069';
-        $this->db = getenv('ODOO_DB') ?: 'odoo19';
-        $this->username = getenv('ODOO_USERNAME') ?: 'admin';
+        // Fix for Docker: local 'localhost' in .env breaks container networking
+        $envUrl = getenv('ODOO_URL');
+        
+        // FORCE FIX: Check for outdated port 8070 from old env vars and correct it to 8069
+        if ($envUrl && strpos($envUrl, '8070') !== false) {
+            $envUrl = str_replace('8070', '8069', $envUrl);
+        }
+
+        if ($envUrl && strpos($envUrl, 'localhost') !== false && gethostbyname('odoo') !== 'odoo') {
+             // If we are in a container where 'odoo' resolves, prefer 'odoo' over 'localhost'
+             $envUrl = str_replace('localhost', 'odoo', $envUrl);
+        }
+
+        $this->url = $envUrl ?: 'http://odoo:8069';
+        $this->db = getenv('ODOO_DB') ?: 'new-odoo';
+        $this->username = getenv('ODOO_USERNAME') ?: 'admin@gmail.com';
         $this->password = getenv('ODOO_PASSWORD') ?: 'admin';
     }
 
@@ -81,10 +94,16 @@ class OdooClient
     {
         // Check if response looks like XML-RPC
         if (stripos($xml, '<methodResponse>') === false) {
+            // Log raw response for debugging
+            $tempDir = dirname(__DIR__, 2) . '/temp';
+            if (!is_dir($tempDir)) mkdir($tempDir, 0777, true);
+            $filename = $tempDir . '/odoo_error_' . date('Ymd_His') . '.html';
+            file_put_contents($filename, $xml);
+
             if (stripos($xml, '<!DOCTYPE') === 0 || stripos($xml, '<html') === 0) {
-                throw new \Exception('Odoo server returned HTML error page. Check if Odoo is running and accessible at ' . $this->url);
+                throw new \Exception('Odoo server returned HTML error page. Detail saved to ' . $filename);
             } else {
-                throw new \Exception('Invalid XML-RPC response from Odoo server');
+                throw new \Exception('Invalid XML-RPC response from Odoo server. Detail saved to ' . $filename);
             }
         }
 

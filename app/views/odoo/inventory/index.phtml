@@ -1,432 +1,777 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title><?= $title ?? 'Inventory Management' ?></title>
+    <title>Sales Orders Management</title>
+    <link rel="stylesheet" href="/css/style.css">
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; margin: 0; padding: 0; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
-        .header-left { }
-        .header-right { }
-        .header h1 { margin: 0; font-size: 2rem; }
-        .btn { padding: 10px 20px; border-radius: 4px; text-decoration: none; font-weight: bold; border: none; cursor: pointer; display: inline-block; }
-        .btn-primary { background: #007bff; color: white; }
-        .btn-primary:hover { background: #0056b3; }
-        .btn-sm { padding: 5px 10px; font-size: 0.875rem; }
-        .btn-warning { background: #ffc107; color: #333; }
-        .btn-secondary { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); }
-        .btn-secondary:hover { background: rgba(255,255,255,0.3); }
-        .btn-danger { background: #dc3545; color: white; }
-        .btn-danger:hover { background: #c82333; }
-        .alert { padding: 15px; border-radius: 4px; margin-bottom: 20px; }
-        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .table-responsive { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #f8f9fa; padding: 15px; text-align: left; font-weight: 600; border-bottom: 2px solid #dee2e6; }
-        td { padding: 12px 15px; border-bottom: 1px solid #dee2e6; }
-        tr:hover { background: #f9f9f9; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; }
-        .badge-success { background: #d4edda; color: #155724; }
-        .badge-danger { background: #f8d7da; color: #721c24; }
-        .badge-warning { background: #fff3cd; color: #856404; }
-        .table-container { margin-top: 20px; }
-        .no-products { text-align: center; padding: 40px; color: #999; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; color: #333; }
         
-        /* Modal Styles */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-        .modal.show { display: flex; align-items: center; justify-content: center; }
-        .modal-content { background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; }
-        .modal-header h2 { margin: 0; color: #333; }
-        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #666; }
-        .modal-close:hover { color: #333; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        
+        .header {
+            background: linear-gradient(135deg, #00c9a7 0%, #00a878 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 201, 167, 0.4);
+        }
+        
+        .header h1 { margin-bottom: 10px; font-size: 28px; }
+        .header p { opacity: 0.9; font-size: 16px; }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-block;
+            text-decoration: none;
+        }
+        
+        .btn-primary { background: linear-gradient(135deg, #00c9a7 0%, #00a878 100%); color: white; }
+        .btn-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
+        .btn-danger { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); color: white; }
+        .btn-small { padding: 8px 16px; font-size: 13px; margin: 3px; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        
+        .action-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
+        th { background: linear-gradient(135deg, #00c9a7 0%, #00a878 100%); color: white; padding: 15px; text-align: left; font-weight: 600; }
+        td { padding: 15px; border-bottom: 1px solid #ecf0f1; }
+        tbody tr:hover { background: #f8f9fa; }
+        
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        
+        .badge-draft { background: #e2e3e5; color: #383d41; }
+        .badge-sent { background: #cce5ff; color: #004085; }
+        .badge-sale { background: #d4edda; color: #155724; }
+        .badge-done { background: #d1ecf1; color: #0c5460; }
+        .badge-cancel { background: #f8d7da; color: #721c24; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal.show { display: flex !important; }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 600px; margin: auto; }
+        .modal-header { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #ecf0f1; }
+        .modal-footer { margin-top: 25px; padding-top: 15px; border-top: 1px solid #ecf0f1; text-align: right; }
+        
         .form-group { margin-bottom: 20px; }
-        label { display: block; font-weight: bold; color: #333; margin-bottom: 8px; }
-        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
-        input:focus, textarea:focus, select:focus { outline: none; border-color: #667eea; box-shadow: 0 0 5px rgba(102, 126, 234, 0.3); }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .modal-footer { display: flex; gap: 10px; margin-top: 25px; padding-top: 15px; border-top: 1px solid #f0f0f0; }
-        .modal-footer button { flex: 1; padding: 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-submit { background: #28a745; color: white; }
-        .btn-submit:hover { background: #218838; }
-        .btn-cancel { background: #6c757d; color: white; }
-        .btn-cancel:hover { background: #5a6268; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: #00c9a7;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 201, 167, 0.1);
+        }
         
-        /* View Modal */
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0; }
-        .info-item { background: #f8f9fa; padding: 12px; border-radius: 4px; border-left: 3px solid #667eea; }
-        .info-label { font-size: 0.85rem; color: #666; text-transform: uppercase; }
-        .info-value { font-size: 1rem; font-weight: bold; color: #333; margin-top: 5px; }
-        @media (max-width: 768px) { .form-row { grid-template-columns: 1fr; } .info-grid { grid-template-columns: 1fr; } }
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .alert.show { display: block; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-danger { background: #f8d7da; color: #721c24; }
+        
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #00c9a7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <div class="header-left">
-            <a href="/odoo/dashboard" class="btn btn-secondary">← Kembali ke Dashboard</a>
+    <div class="container">
+        <div style="margin-bottom: 20px; font-size: 14px;">
+            <a href="/odoo-dashboard" style="color: #00c9a7; text-decoration: none;">📊 Dashboard</a> / 
+            <span style="color: #7f8c8d;">💰 Sales Orders</span>
         </div>
-        <div class="header-right">
-            <button onclick="openAddModal()" class="btn btn-primary">+ Tambah Produk</button>
-        </div>
-    </div>
 
-    <?php if ($this->flashSession->has('success')): ?>
-        <div class="alert alert-success">
-            <?php echo $this->flashSession->output(); ?>
+        <div class="header">
+            <h1>💰 Sales Orders</h1>
+            <p>Kelola pesanan penjualan kepada pelanggan</p>
         </div>
-    <?php endif; ?>
 
-    <?php if ($this->flashSession->has('error')): ?>
-        <div class="alert alert-danger">
-            <?php echo $this->flashSession->output(); ?>
-        </div>
-    <?php endif; ?>
+        <div id="alertContainer"></div>
 
-    <?php if (empty($products)): ?>
-        <div class="table-responsive">
-            <div class="no-products">
-                <p>Belum ada produk. <button onclick="openAddModal()" class="btn btn-primary">Tambah Produk</button></p>
-            </div>
+        <div class="action-bar">
+            <button class="btn btn-success" id="btnNewSO">➕ Buat Sales Order Baru</button>
+            <!-- 'Kelola Customers' dihilangkan karena sekarang dikelola lewat Partners -->
+            <button class="btn btn-success" id="btnAddCustomer" data-open-customer>➕ Tambah Customer</button>
+            <button class="btn btn-primary" id="btnRefresh">🔄 Refresh</button>
+            <a href="/odoo-invoicing" class="btn btn-primary">📄 Lihat Invoice</a>
+            <a href="/odoo-dashboard" class="btn btn-primary">📊 Kembali</a>
         </div>
-    <?php else: ?>
-        <div class="table-container">
-            <table>
+
+        <div id="loading" style="text-align: center; padding: 40px;">
+            <div class="spinner"></div>
+            <p style="margin-top: 15px; color: #7f8c8d;">Memuat data...</p>
+        </div>
+
+        <div id="tableContainer" style="display: none;">
+            <table id="soTable">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Nama</th>
-                        <th>SKU</th>
-                        <th>Kategori</th>
-                        <th>Stok</th>
-                        <th>Harga</th>
-                        <th>Tipe</th>
+                        <th>No. SO</th>
+                        <th>Pelanggan</th>
+                        <th>Tanggal</th>
+                        <th>Total</th>
                         <th>Status</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <?php foreach ($products as $product): ?>
-                        <tr>
-                            <td><?= $product->id ?></td>
-                            <td><strong><?= htmlspecialchars($product->name) ?></strong></td>
-                            <td><?= htmlspecialchars($product->sku ?? '-') ?></td>
-                            <td><?= htmlspecialchars($product->category ?? '-') ?></td>
-                            <td>
-                                <span class="badge <?= $product->quantity > 0 ? 'badge-success' : 'badge-danger' ?>">
-                                    <?= $product->quantity ?>
-                                </span>
-                            </td>
-                            <td>Rp <?= number_format($product->selling_price, 0, ',', '.') ?></td>
-                            <td><?= htmlspecialchars($product->product_type) ?></td>
-                            <td>
-                                <span class="badge <?= $product->synced_to_odoo ? 'badge-success' : 'badge-warning' ?>">
-                                    <?= $product->synced_to_odoo ? '✓ Synced' : '✗ Not Synced' ?>
-                                </span>
-                            </td>
-                            <td>
-                                <div class="actions">
-                                    <button onclick='openViewModal(<?= json_encode($product->toArray()) ?>)' class="btn btn-primary btn-sm">View</button>
-                                    <button onclick='openEditModal(<?= json_encode($product->toArray()) ?>)' class="btn btn-warning btn-sm">Edit</button>
-                                    <button onclick="deleteProduct(<?= $product->id ?>)" class="btn btn-danger btn-sm">Delete</button>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
+                <tbody id="soTableBody"></tbody>
             </table>
         </div>
-    <?php endif; ?>
-</div>
 
-<!-- Modal: Add Product -->
-<div id="addModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>➕ Tambah Produk</h2>
-            <button class="modal-close" onclick="closeAddModal()">×</button>
+        <div id="emptyState" style="display: none; text-align: center; padding: 60px 20px; color: #7f8c8d;">
+            <div style="font-size: 48px; margin-bottom: 20px;">📭</div>
+            <h3 style="color: #2c3e50;">Tidak ada Sales Order</h3>
+            <p>Mulai buat sales order baru dengan mengklik tombol di atas</p>
         </div>
-        <form onsubmit="submitAdd(event)" method="POST">
-            <div class="form-group">
-                <label>Nama Produk *</label>
-                <input type="text" name="name" required>
+    </div>
+
+    <?php include __DIR__ . '/_customer_modal.phtml'; ?>
+
+    <!-- Modal: Create SO -->
+    <div class="modal" id="modalSO">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Buat Sales Order Baru</h2>
             </div>
-            <div class="form-row">
+
+            <form id="formSO">
                 <div class="form-group">
-                    <label>SKU</label>
-                    <input type="text" name="sku">
+                    <label for="soCustomer">Pelanggan *</label>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <select id="soCustomer" required style="flex:1;">
+                            <option value="">-- Pilih Pelanggan --</option>
+                        </select>
+                        <button type="button" id="deleteCustomerModalBtn" class="btn btn-danger btn-small" title="Hapus customer terpilih">🗑️</button>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Kategori *</label>
-                    <select name="category" required>
-                        <option value="">- Pilih Kategori -</option>
-                        <?php foreach ($categories as $cat): ?>
-                            <option value="<?= $cat->name ?>"><?= $cat->name ?></option>
-                        <?php endforeach; ?>
-                    </select>
+
+                <div id="soLinesContainer">
+                    <label style="font-weight: 600; color: #2c3e50; margin-bottom: 15px;">Detail Produk</label>
+                    <div class="so-line" style="border: 2px solid #ecf0f1; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <div class="form-group">
+                            <label>Produk *</label>
+                            <select class="line-product" required>
+                                <option value="">-- Pilih Produk --</option>
+                            </select>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                            <div class="form-group">
+                                <label>Quantity *</label>
+                                <input type="number" class="line-qty" min="1" value="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Harga per Unit *</label>
+                                <input type="number" class="line-price" min="0" step="0.01" value="0" required>
+                            </div>
+
+                            <div class="form-group" style="display: flex; align-items: flex-end;">
+                                <button type="button" class="btn btn-danger btn-small" style="width: 100%; margin-bottom: 2px;" onclick="removeSOLine(this)">Hapus</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <button type="button" class="btn btn-primary btn-small" onclick="addSOLine()">+ Tambah Produk</button>
+            </form>
+
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="btnCloseModal">Batal</button>
+                <button class="btn btn-success" id="btnSaveSO">💾 Simpan</button>
             </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Harga Jual *</label>
-                    <input type="number" name="selling_price" step="0.01" min="0" required>
-                </div>
-                <div class="form-group">
-                    <label>Harga Pokok</label>
-                    <input type="number" name="cost_price" step="0.01" min="0">
-                </div>
+        </div>
+    </div>
+
+    <!-- Modal: Confirm -->
+    <div class="modal" id="modalConfirm">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Konfirmasi</h2>
             </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Stok Awal</label>
-                    <input type="number" name="quantity" min="0" value="1">
-                </div>
-                <div class="form-group">
-                    <label>Tipe Produk</label>
-                    <select name="product_type">
-                        <option value="consu">Consumable</option>
-                        <option value="product">Product</option>
-                        <option value="service">Service</option>
-                        <option value="combo">Combo</option>
-                    </select>
-                </div>
+            <p id="confirmMessage" style="margin-bottom: 20px;"></p>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="btnConfirmNo">Batal</button>
+                <button class="btn btn-danger" id="btnConfirmYes">Ya, Lanjutkan</button>
             </div>
-            <div class="form-group">
-                <label>Deskripsi</label>
-                <textarea name="description" rows="3"></textarea>
+        </div>
+    </div>
+
+    <!-- Modal: View Invoice -->
+    <div class="modal" id="modalInvoice">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <h2 id="invModalTitle">Invoice Detail</h2>
+                <button type="button" class="btn btn-danger btn-small" onclick="closeInvoiceModal()" style="padding:4px 8px;">✕</button>
+            </div>
+            <div id="invModalBody" style="max-height: 70vh; overflow-y: auto;">
+                <div style="text-align:center; padding: 20px;">Loading...</div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-cancel" onclick="closeAddModal()">Batal</button>
-                <button type="submit" class="btn btn-submit">Simpan</button>
+                <button class="btn btn-primary" onclick="closeInvoiceModal()">Tutup</button>
             </div>
-        </form>
-    </div>
-</div>
-
-<!-- Modal: Edit Product -->
-<div id="editModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>✏️ Edit Produk & Stok</h2>
-            <button class="modal-close" onclick="closeEditModal()">×</button>
         </div>
-        <form onsubmit="submitEdit(event)" method="POST">
-            <input type="hidden" id="editId" name="id">
-            <div class="form-group">
-                <label>Nama Produk *</label>
-                <input type="text" id="editName" name="name" required>
-            </div>
-            <div class="form-row">
+    </div>
+
+    <script>
+        const API_URL = '/api.php';
+        let currentAction = null;
+        let currentSOId = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSalesOrders();
+            loadCustomers();
+            loadProducts();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('btnNewSO').addEventListener('click', openNewSOModal);
+            const addCustomerBtn = document.getElementById('btnAddCustomer');
+            if (addCustomerBtn) addCustomerBtn.addEventListener('click', function() { if (typeof showCustomerModal === 'function') showCustomerModal(); else document.querySelector('[data-open-customer]')?.click(); });
+            document.getElementById('btnRefresh').addEventListener('click', loadSalesOrders);
+            document.getElementById('btnSaveSO').addEventListener('click', saveSO);
+            const delModalBtn = document.getElementById('deleteCustomerModalBtn');
+            if (delModalBtn) delModalBtn.addEventListener('click', function() {
+                const sel = document.getElementById('soCustomer');
+                if (!sel) return;
+                const val = sel.value;
+                if (!val) { showAlert('Pilih customer terlebih dahulu', 'warning'); return; }
+                if (!confirm('Hapus customer terpilih?')) return;
+                // call API
+                fetch('/api.php?action=delete_customer', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: val }) })
+                    .then(r => r.json())
+                    .then(resp => {
+                        if (resp && resp.success) {
+                            showAlert(resp.message || 'Customer dihapus', 'success');
+                            const opt = sel.querySelector('option[value="' + val + '"]'); if (opt) opt.remove(); sel.value = '';
+                        } else {
+                            showAlert('Gagal menghapus: ' + (resp.error || 'Unknown'), 'danger');
+                        }
+                    }).catch(err => showAlert('Error: ' + err.message, 'danger'));
+            });
+            document.getElementById('btnCloseModal').addEventListener('click', closeModal);
+            document.getElementById('btnConfirmYes').addEventListener('click', executeConfirmAction);
+            document.getElementById('btnConfirmNo').addEventListener('click', closeConfirmModal);
+        }
+
+        function loadSalesOrders() {
+            showLoading(true);
+            fetch(`${API_URL}?action=list_sales_orders`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        renderSOTable(data.data);
+                    } else {
+                        showAlert('Gagal memuat data', 'danger');
+                    }
+                    showLoading(false);
+                })
+                .catch(err => {
+                    showAlert('Error: ' + err.message, 'danger');
+                    showLoading(false);
+                });
+        }
+
+        // Load customers (includes Odoo + local entries) and populate #soCustomer
+        function loadCustomers() {
+            fetch('/api.php?action=list_customers')
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.success && Array.isArray(data.data)) {
+                        const sel = document.getElementById('soCustomer');
+                        if (!sel) return;
+                        const cur = sel.value;
+                        sel.innerHTML = '<option value="">-- Pilih Pelanggan --</option>';
+                        data.data.forEach(c => {
+                            const opt = document.createElement('option');
+                            opt.value = c.id;
+                            opt.textContent = c.name + (c.local ? ' (lokal)' : '');
+                            sel.appendChild(opt);
+                        });
+                        if (cur) sel.value = cur;
+                    }
+                })
+                .catch(err => console.error('Error loading customers:', err));
+        }
+
+        function renderSOTable(orders) {
+            const tbody = document.getElementById('soTableBody');
+            const tableContainer = document.getElementById('tableContainer');
+            const emptyState = document.getElementById('emptyState');
+
+            if (!orders || orders.length === 0) {
+                tableContainer.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            orders.forEach(order => {
+                const badge = `<span class="badge badge-${order.state}">${getStateLabel(order.state)}</span>`;
+                let actionBtns = '';
+                
+                if (order.state === 'draft') {
+                    actionBtns += `<button class="btn btn-success btn-small" onclick="confirmAction('confirm', ${order.id}, 'Konfirmasi SO ini?')">✅ Konfirmasi</button>`;
+                    actionBtns += `<button class="btn btn-danger btn-small" onclick="confirmAction('cancel', ${order.id}, 'Batalkan SO ini?')">❌ Batalkan</button>`;
+                }
+
+                // Show View Invoice if confirmed and invoice exists
+                if ((order.state === 'sale' || order.state === 'done') && order.invoice_ids && order.invoice_ids.length > 0) {
+                    const invId = order.invoice_ids[0];
+                    actionBtns += `<button class="btn btn-primary btn-small" onclick="viewInvoice(${invId}, '${order.name}')">📄 Lihat Invoice</button> `;
+                }
+
+                // Show delete only for confirmed (sale) or cancelled orders per preference
+                if (order.state === 'sale' || order.state === 'cancel' || order.state === 'done') {
+                    actionBtns += `<button class="btn btn-danger btn-small" onclick="confirmAction('delete', ${order.id}, 'Hapus SO ini?')">🗑️ Hapus</button>`;
+                }
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${order.name}</strong></td>
+                    <td>${order.customer_name || 'N/A'}</td>
+                    <td>${formatDate(order.date_order)}</td>
+                    <td>Rp ${formatCurrency(order.amount_total)}</td>
+                    <td>${badge}</td>
+                    <td>${actionBtns}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            tableContainer.style.display = 'block';
+            emptyState.style.display = 'none';
+        }
+
+        function getStateLabel(state) {
+            const labels = {
+                'draft': '📝 Draft',
+                'sent': '📤 Dikirim',
+                'sale': '✅ Dikonfirmasi',
+
+                'done': '✔️ Selesai',
+                'cancel': '❌ Dibatalkan'
+            };
+            return labels[state] || state;
+        }
+
+        function loadCustomers() {
+            fetch(`${API_URL}?action=list_customers`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        const select = document.getElementById('soCustomer');
+                        select.innerHTML = '<option value="">-- Pilih Pelanggan --</option>';
+                        data.data.forEach(customer => {
+                            const option = document.createElement('option');
+                            option.value = customer.id;
+                            option.textContent = customer.name;
+                            select.appendChild(option);
+                        });
+                    }
+                })
+                .catch(err => console.error('Error:', err));
+        }
+
+        function loadProducts() {
+            fetch('/inventory-api/list')
+                .then(r => r.json())
+                .then(data => {
+                    if (!data || !data.success) return;
+                    const selects = document.querySelectorAll('.so-line .line-product');
+                    selects.forEach(select => {
+                        select.innerHTML = '<option value="">-- Pilih Produk --</option>';
+                        data.data.forEach(product => {
+                            const price = (product.selling_price !== undefined) ? product.selling_price : (product.list_price ?? 0);
+                            const qty = (product.quantity !== undefined) ? product.quantity : (product.qty_available ?? 0);
+                            const option = document.createElement('option');
+                            // mark inventory items so API can map them on submit
+                            option.value = 'inventory-' + product.id;
+                            option.dataset.price = price;
+                            option.dataset.qty = qty;
+                            option.dataset.name = product.name || '';
+                            option.textContent = `${product.name} (Rp ${formatCurrency(price)}) — Stok: ${qty}`;
+                            select.appendChild(option);
+                        });
+
+                        // attach change handler to auto-fill price and qty limits
+                        select.addEventListener('change', function() { onLineProductChange(this); });
+                    });
+                })
+                .catch(err => console.error('Error:', err));
+        }
+
+        function onLineProductChange(select) {
+            const line = select.closest('.so-line');
+            if (!line) return;
+            const priceInput = line.querySelector('.line-price');
+            const qtyInput = line.querySelector('.line-qty');
+            const option = select.options[select.selectedIndex];
+            if (option && option.value) {
+                const price = parseFloat(option.dataset.price) || 0;
+                const qty = option.dataset.qty !== undefined && option.dataset.qty !== '' ? parseFloat(option.dataset.qty) : null;
+                if (priceInput) priceInput.value = price;
+                if (qtyInput) {
+                    if (qty !== null && !isNaN(qty)) qtyInput.max = qty; else qtyInput.removeAttribute('max');
+                }
+                // do an immediate check on qty vs stock
+                checkLineQtyLimit(line);
+            }
+        }
+
+        function checkLineQtyLimit(line) {
+            const qtyInput = line.querySelector('.line-qty');
+            const select = line.querySelector('.line-product');
+            const option = select && select.options[select.selectedIndex];
+            const stock = option && option.dataset.qty !== undefined ? parseFloat(option.dataset.qty) : null;
+            const qty = qtyInput ? parseFloat(qtyInput.value) || 0 : 0;
+
+            const existingWarn = line.querySelector('.line-stock-warn');
+            if (stock !== null && !isNaN(stock) && qty > stock) {
+                if (!existingWarn) {
+                    const warn = document.createElement('div');
+                    warn.className = 'line-stock-warn';
+                    warn.style.background = '#fff3cd';
+                    warn.style.border = '1px solid #ffc107';
+                    warn.style.padding = '8px';
+                    warn.style.borderRadius = '6px';
+                    warn.style.marginTop = '10px';
+                    warn.style.color = '#856404';
+                    warn.textContent = '⚠️ Jumlah melebihi stok tersedia (' + stock + ')';
+                    qtyInput.parentElement.appendChild(warn);
+                } else {
+                    existingWarn.textContent = '⚠️ Jumlah melebihi stok tersedia (' + stock + ')';
+                }
+                return true;
+            } else {
+                if (existingWarn) existingWarn.remove();
+                return false;
+            }
+        }
+
+        function addSOLine() {
+            const container = document.getElementById('soLinesContainer');
+            const div = document.createElement('div');
+            div.className = 'so-line';
+            div.style.border = '2px solid #ecf0f1';
+            div.style.padding = '15px';
+            div.style.borderRadius = '8px';
+            div.style.marginBottom = '15px';
+            div.innerHTML = `
                 <div class="form-group">
-                    <label>SKU</label>
-                    <input type="text" id="editCode" name="sku">
-                </div>
-                <div class="form-group">
-                    <label>Kategori *</label>
-                    <select id="editCategory" name="category" required>
-                        <option value="">- Pilih Kategori -</option>
-                        <?php foreach ($categories as $cat): ?>
-                            <option value="<?= $cat->name ?>"><?= $cat->name ?></option>
-                        <?php endforeach; ?>
+                    <label>Produk *</label>
+                    <select class="line-product" required>
+                        <option value="">-- Pilih Produk --</option>
                     </select>
                 </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Harga Jual *</label>
-                    <input type="number" id="editPrice" name="selling_price" step="0.01" min="0" required>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Quantity *</label>
+                        <input type="number" class="line-qty" min="1" value="1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Harga per Unit *</label>
+                        <input type="number" class="line-price" min="0" step="0.01" value="0" required>
+                    </div>
+
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
+                        <button type="button" class="btn btn-danger btn-small" style="width: 100%; margin-bottom: 2px;" onclick="removeSOLine(this)">Hapus</button>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Harga Pokok</label>
-                    <input type="number" id="editCost" name="cost_price" step="0.01" min="0">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>📊 Stok Saat Ini</label>
-                    <input type="number" id="editQuantity" name="quantity" min="0" required>
-                </div>
-                <div class="form-group">
-                    <label>Tipe Produk</label>
-                    <select id="editType" name="product_type">
-                        <option value="consu">Consumable</option>
-                        <option value="product">Product</option>
-                        <option value="service">Service</option>
-                        <option value="combo">Combo</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-group">
-                <label>Deskripsi</label>
-                <textarea id="editDescription" name="description" rows="3"></textarea>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-cancel" onclick="closeEditModal()">Batal</button>
-                <button type="submit" class="btn btn-submit">Simpan</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Modal: View Product -->
-<div id="viewModal" class="modal">
-    <div class="modal-content" style="max-width: 450px;">
-        <div class="modal-header">
-            <h2 id="viewTitle" style="font-size: 1.3rem;">Detail Produk</h2>
-            <button class="modal-close" onclick="closeViewModal()">×</button>
-        </div>
-        <div id="viewContent" style="padding: 15px 0;"></div>
-    </div>
-</div>
-
-<script>
-function openAddModal() {
-    document.getElementById('addModal').classList.add('show');
-}
-
-function closeAddModal() {
-    document.getElementById('addModal').classList.remove('show');
-    document.getElementById('addModal').querySelector('form').reset();
-}
-
-function openEditModal(product) {
-    document.getElementById('editId').value = product.id;
-    document.getElementById('editName').value = product.name;
-    document.getElementById('editCode').value = product.sku || '';
-    document.getElementById('editCategory').value = product.category || '';
-    document.getElementById('editPrice').value = product.selling_price || 0;
-    document.getElementById('editCost').value = product.cost_price || 0;
-    document.getElementById('editQuantity').value = product.quantity || 0;
-    document.getElementById('editType').value = product.product_type || '';
-    document.getElementById('editDescription').value = product.description || '';
-    document.getElementById('editModal').classList.add('show');
-}
-
-function closeEditModal() {
-    document.getElementById('editModal').classList.remove('show');
-}
-
-function openViewModal(product) {
-    const stock_color = product.quantity > 0 ? '#28a745' : '#dc3545';
-    const stock_text = product.quantity > 0 ? 'Available' : 'Out of Stock';
-    document.getElementById('viewTitle').innerHTML = '👁️ ' + (product.name || 'Produk');
-    let html = `
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">SKU</div>
-                <div class="info-value">${product.sku || '-'}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Kategori</div>
-                <div class="info-value">${product.category || '-'}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Stok</div>
-                <div class="info-value" style="color: ${stock_color}">${product.quantity || 0} unit</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Tipe</div>
-                <div class="info-value">${product.product_type || '-'}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Harga Jual</div>
-                <div class="info-value">Rp ${new Intl.NumberFormat('id-ID').format(product.selling_price || 0)}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Harga Pokok</div>
-                <div class="info-value">Rp ${new Intl.NumberFormat('id-ID').format(product.cost_price || 0)}</div>
-            </div>
-        </div>
-        ${product.description ? `<div style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 15px 0; border-left: 3px solid #667eea;"><strong style="color: #667eea;">Deskripsi:</strong><p style="margin: 8px 0 0 0; white-space: pre-wrap; color: #555;">${product.description}</p></div>` : ''}
-        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #f0f0f0; text-align: right;">
-            <button onclick="closeViewModal()" class="btn btn-primary btn-sm">Tutup</button>
-        </div>
-    `;
-    document.getElementById('viewContent').innerHTML = html;
-    document.getElementById('viewModal').classList.add('show');
-}
-
-function closeViewModal() {
-    document.getElementById('viewModal').classList.remove('show');
-}
-
-function submitAdd(e) {
-    e.preventDefault();
-    const form = e.target;
-    const params = new URLSearchParams();
-    new FormData(form).forEach((v,k) => params.append(k, v));
-
-    fetch('/api.php?action=create_inventory', { 
-        method: 'POST', 
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: params.toString()
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            closeAddModal();
-            window.location.reload();
-        } else {
-            alert('Error: ' + data.message);
+            `;
+            container.insertBefore(div, container.lastElementChild);
+            loadProducts();
+            // attach event listeners for new line
+            const newSelect = div.querySelector('.line-product');
+            const newQty = div.querySelector('.line-qty');
+            if (newSelect) newSelect.addEventListener('change', function(){ onLineProductChange(this); });
+            if (newQty) newQty.addEventListener('input', function(){ checkLineQtyLimit(this.closest('.so-line')); });
         }
-    })
-    .catch(e => {
-        alert('Error: ' + e.message);
-    });
-}
 
-function submitEdit(e) {
-    e.preventDefault();
-    const id = document.getElementById('editId').value;
-    const params = new URLSearchParams();
-    new FormData(e.target).forEach((v,k) => params.append(k, v));
-
-    // Send to stable public API endpoint to ensure JSON response
-    fetch('/api.php?action=edit_inventory', { 
-        method: 'POST', 
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: params.toString() + '&id=' + encodeURIComponent(id)
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            closeEditModal();
-            window.location.reload();
-        } else {
-            alert('Error: ' + data.message);
+        function removeSOLine(btn) {
+            const lines = document.querySelectorAll('.so-line');
+            if (lines.length > 1) {
+                btn.closest('.so-line').remove();
+            } else {
+                showAlert('Minimal harus ada satu produk', 'warning');
+            }
         }
-    })
-    .catch(e => {
-        alert('Error: ' + e.message);
-    });
-}
 
-function deleteProduct(id) {
-    if (confirm('Yakin hapus produk ini?')) {
-        fetch('/odoo-inventory/delete/' + id, { method: 'POST' })
+        function saveSO() {
+            const customerId = document.getElementById('soCustomer').value;
+            if (!customerId) {
+                showAlert('Pilih pelanggan terlebih dahulu', 'warning');
+                return;
+            }
+
+            const lines = [];
+            let invalid = false;
+            document.querySelectorAll('.so-line').forEach(line => {
+                const productSel = line.querySelector('.line-product');
+                const productId = productSel ? productSel.value : null;
+                const qty = parseFloat(line.querySelector('.line-qty').value);
+                const price = parseFloat(line.querySelector('.line-price').value);
+
+                if (!productId || !qty || qty <= 0) {
+                    invalid = true;
+                    return;
+                }
+
+                // Validate against stock if available
+                const option = productSel.options[productSel.selectedIndex];
+                const stock = option && option.dataset.qty !== undefined ? parseFloat(option.dataset.qty) : null;
+                if (stock !== null && !isNaN(stock) && qty > stock) {
+                    showAlert('Salah satu item melebihi stok tersedia', 'danger');
+                    invalid = true;
+                    return;
+                }
+
+                lines.push({
+                    product_id: productId,
+                    quantity: qty,
+                    price: price
+                });
+            });
+
+            if (invalid) return;
+
+            if (lines.length === 0) {
+                showAlert('Tambahkan minimal satu produk', 'warning');
+                return;
+            }
+
+            fetch(`${API_URL}?action=create_sales_order`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'create_sales_order', // fallback
+                    customer_id: customerId,
+                    lines: lines
+                })
+            })
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    window.location.reload();
+                    showAlert('Sales Order berhasil dibuat!', 'success');
+                    closeModal();
+                    loadSalesOrders();
                 } else {
-                    alert('Error: ' + data.message);
+                    showAlert('Error: ' + data.error, 'danger');
                 }
             })
-            .catch(e => alert('Error: ' + e.message));
-    }
-}
+            .catch(err => showAlert('Error: ' + err.message, 'danger'));
+        }
 
-// Close modal when clicking outside
-window.onclick = function(e) {
-    const addModal = document.getElementById('addModal');
-    const editModal = document.getElementById('editModal');
-    const viewModal = document.getElementById('viewModal');
-    if (e.target === addModal) closeAddModal();
-    if (e.target === editModal) closeEditModal();
-    if (e.target === viewModal) closeViewModal();
-}
-</script>
+        function confirmAction(action, soId, message) {
+            currentAction = action;
+            currentSOId = soId;
+            document.getElementById('confirmMessage').textContent = message;
+            document.getElementById('modalConfirm').classList.add('show');
+        }
+
+        function executeConfirmAction() {
+            closeConfirmModal();
+
+            let apiAction = '';
+            if (currentAction === 'confirm') apiAction = 'confirm_sales_order';
+            else if (currentAction === 'cancel') apiAction = 'cancel_sales_order';
+            else if (currentAction === 'delete') apiAction = 'delete_sales_order';
+
+            if (!apiAction) return;
+
+            fetch(`${API_URL}?action=${apiAction}&id=${currentSOId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        const msg = currentAction === 'confirm' ? 'Sales Order dikonfirmasi!' : 'Sales Order dibatalkan!';
+                        showAlert(msg, 'success');
+                        loadSalesOrders();
+                    } else {
+                        showAlert('Error: ' + data.error, 'danger');
+                    }
+                })
+                .catch(err => showAlert('Error: ' + err.message, 'danger'));
+        }
+
+        function openNewSOModal() {
+            document.getElementById('formSO').reset();
+            // Reload products so stock/price are fresh
+            loadProducts();
+            // Attach change handlers to the initial line's product select and qty
+            setTimeout(() => {
+                const initialLine = document.querySelector('.so-line');
+                if (initialLine) {
+                    const sel = initialLine.querySelector('.line-product');
+                    const qty = initialLine.querySelector('.line-qty');
+                    if (sel) sel.addEventListener('change', function(){ onLineProductChange(this); });
+                    if (qty) qty.addEventListener('input', function(){ checkLineQtyLimit(this.closest('.so-line')); });
+                }
+            }, 150);
+            document.getElementById('modalSO').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('modalSO').classList.remove('show');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('modalConfirm').classList.remove('show');
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('tableContainer').style.display = show ? 'none' : 'block';
+        }
+
+        function showAlert(message, type = 'info') {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} show`;
+            alert.textContent = message;
+            container.appendChild(alert);
+
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('id-ID', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function formatCurrency(value) {
+            return parseFloat(value).toLocaleString('id-ID', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function viewInvoice(id, soName) {
+            document.getElementById('modalInvoice').classList.add('show');
+            document.getElementById('invModalTitle').textContent = 'Invoice Detail - ' + soName;
+            const body = document.getElementById('invModalBody');
+            body.innerHTML = '<div style="text-align:center; padding: 40px;"><div style="font-size:30px; margin-bottom:10px;">↻</div>Loading invoice...</div>';
+
+            fetch('/api.php?action=get_invoice&id=' + encodeURIComponent(id))
+                .then(r => r.json())
+                .then(resp => {
+                    if (resp.success && resp.data) {
+                        const inv = resp.data.invoice;
+                        const lines = resp.data.lines || [];
+                        
+                        let html = `
+                            <div style="padding: 20px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px;">
+                                <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
+                                    <div><strong>Invoice:</strong> ${inv.name}</div>
+                                    <div><strong>Status:</strong> <span class="badge badge-${inv.state}">${inv.state}</span></div>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
+                                    <div><strong>Customer:</strong> ${inv.partner_id ? inv.partner_id[1] : 'N/A'}</div>
+                                    <div><strong>Date:</strong> ${inv.invoice_date}</div>
+                                </div>
+                            </div>
+                            <table class="table" style="width:100%; border-collapse:collapse;">
+                                <thead style="background: #ecf0f1;">
+                                    <tr>
+                                        <th style="padding:10px; text-align:left;">Product</th>
+                                        <th style="padding:10px; text-align:right;">Qty</th>
+                                        <th style="padding:10px; text-align:right;">Price</th>
+                                        <th style="padding:10px; text-align:right;">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+                        
+                        lines.forEach(l => {
+                            html += `
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding:10px;">${l.name}</td>
+                                    <td style="padding:10px; text-align:right;">${parseFloat(l.quantity).toLocaleString()}</td>
+                                    <td style="padding:10px; text-align:right;">Rp ${formatCurrency(l.price_unit)}</td>
+                                    <td style="padding:10px; text-align:right;">Rp ${formatCurrency(l.price_subtotal)}</td>
+                                </tr>
+                            `;
+                        });
+                        
+                        html += `
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" style="padding:15px; text-align:right; font-weight:bold;">Total</td>
+                                        <td style="padding:15px; text-align:right; font-weight:bold; font-size:1.1em;">Rp ${formatCurrency(inv.amount_total)}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        `;
+                        
+                        body.innerHTML = html;
+                    } else {
+                        body.innerHTML = `<div class="alert alert-danger">Gagal memuat invoice: ${resp.error}</div>`;
+                    }
+                })
+                .catch(err => {
+                    body.innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
+                });
+        }
+
+        function closeInvoiceModal() {
+            document.getElementById('modalInvoice').classList.remove('show');
+        }
+    </script>
 </body>
 </html>
+
+    <!-- Server-side sales orders table removed — client-side table (#soTable) is used for rendering -->
+    
+    <div style="margin-top: 30px; text-align: center;">
+        <a href="/odoo-dashboard" style="color: #3498db; text-decoration: none;">← Back to Dashboard</a>
+    </div>
+</div>

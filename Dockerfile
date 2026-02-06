@@ -20,6 +20,16 @@ RUN pecl install phalcon-5.0.0 > /dev/null 2>&1 && docker-php-ext-enable phalcon
 # Verify Phalcon installation
 RUN php -m | grep -i phalcon
 
+# Enable OPcache extension and apply sane defaults
+RUN docker-php-ext-install opcache && docker-php-ext-enable opcache
+RUN { \
+    echo "opcache.memory_consumption=128"; \
+    echo "opcache.interned_strings_buffer=8"; \
+    echo "opcache.max_accelerated_files=10000"; \
+    echo "opcache.revalidate_freq=2"; \
+    echo "opcache.enable_cli=1"; \
+} > /usr/local/etc/php/conf.d/opcache-recommended.ini
+
 # Enable error display for debugging
 RUN echo "display_errors = On" >> /usr/local/etc/php/php.ini-production && \
 	echo "error_reporting = E_ALL" >> /usr/local/etc/php/php.ini-production && \
@@ -39,6 +49,7 @@ RUN composer install --no-dev --prefer-dist --no-interaction 2>&1 || echo "Compo
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf && \
 	sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf && \
+	printf '<Directory ${APACHE_DOCUMENT_ROOT}>\n\tAllowOverride All\n\tRequire all granted\n</Directory>\n' >> /etc/apache2/apache2.conf && \
 	a2enmod rewrite && \
 	chown -R www-data /var/www/html
 

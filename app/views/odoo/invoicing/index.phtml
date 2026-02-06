@@ -1,138 +1,384 @@
 <?= $this->getContent() ?>
 
+<?php // Ensure $title is defined to avoid undefined variable notices in some render paths
+$title = $title ?? 'Invoices'; ?>
+
+
 <style>
-    /* Invoice list styles */
-    .invoice-table { width: 100%; border-collapse: collapse; font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
-    .invoice-table thead th { padding: 16px; text-align: left; color: #fff; font-size: 14px; letter-spacing: 0.3px; }
-    .invoice-table thead { background: linear-gradient(135deg,#667eea,#764ba2); }
-    .invoice-table tbody td { padding: 16px; font-size: 15px; border-bottom: 1px solid #eef2f6; color: #2c3e50; }
-    .invoice-row { transition: background .12s ease, transform .06s ease; }
-    .invoice-row:hover { background: #fbfcff; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(50,50,93,0.04); }
+    /* Modern Dashboard Variables */
+    :root {
+        --primary: #4f46e5;
+        --primary-hover: #4338ca;
+        --secondary: #64748b;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --bg-color: #f3f4f6;
+        --card-bg: #ffffff;
+        --text-primary: #111827;
+        --text-secondary: #6b7280;
+        --border-color: #e5e7eb;
+    }
 
-    .status-badge { padding: 8px 14px; color: #fff; border-radius: 20px; font-size: 13px; font-weight: 700; display:inline-block; }
+    body {
+        background-color: var(--bg-color);
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
 
-    /* Action buttons */
-    .action-btn { border: none; cursor: pointer; padding: 8px 12px; border-radius: 8px; font-size: 14px; transition: all .12s ease; }
-    .action-btn.view { color: #0954d9; background: rgba(9,84,217,0.06); }
-    .action-btn.view:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(9,84,217,0.08); }
-    .action-btn.delete { color: #c0392b; background: rgba(224,74,64,0.06); }
-    .action-btn.delete:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(192,57,43,0.08); }
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 30px 20px;
+    }
 
-    /* Modal styling */
-    .modal { display:none; position: fixed; inset: 0; background: rgba(10,15,25,0.55); align-items: center; justify-content: center; z-index: 1200; }
-    .modal.show { display:flex; }
-    .modal-content.card { width: 92%; max-width: 900px; background: #fff; border-radius: 14px; box-shadow: 0 20px 50px rgba(13,38,76,0.15); overflow: hidden; }
-    .modal-header h3 { margin:0; font-size:20px; color:#1f2d3d; padding:16px 20px; border-bottom:1px solid #f0f3f6; }
-    .modal-body { padding:18px 22px; max-height:60vh; overflow:auto; }
-    .modal-footer { padding:12px 18px; text-align:right; border-top:1px solid #f0f3f6; }
+    /* Page Header */
+    .page-header {
+        margin-bottom: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .page-subtitle {
+        color: var(--text-secondary);
+        font-size: 14px;
+        margin-top: 4px;
+    }
 
-    .inv-lines-table { width:100%; border-collapse: collapse; }
-    .inv-lines-table thead th { padding:10px; text-align:left; color:#7f8c8d; font-size:13px; }
-    .inv-lines-table tbody td { padding:10px; font-size:15px; }
+    /* Card Styling */
+    .card {
+        background: var(--card-bg);
+        border-radius: 16px;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+    }
 
-    @media (max-width: 700px) { .invoice-table tbody td { font-size:14px; padding:12px; } .modal-content.card { max-width: 96%; width: 96%; } }
+    /* Table Styles */
+    .table-container {
+        overflow-x: auto;
+    }
+
+    .invoice-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        text-align: left;
+    }
+
+    .invoice-table thead th {
+        background-color: #f9fafb;
+        padding: 16px 24px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-secondary);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .invoice-table tbody tr {
+        transition: background-color 0.2s;
+    }
+    
+    .invoice-table tbody tr:hover {
+        background-color: #f9fafb;
+    }
+
+    .invoice-table td {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 14px;
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+
+    .invoice-table td:first-child { font-weight: 600; font-family: 'Monaco', 'Consolas', monospace; color: var(--primary); }
+    .invoice-table tr:last-child td { border-bottom: none; }
+
+    /* Badges */
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 9999px;
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1;
+    }
+    
+    .badge-in-invoice { background-color: #ffedd5; color: #c2410c; } /* Orange */
+    .badge-out-invoice { background-color: #dbeafe; color: #1e40af; } /* Blue */
+    
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 12px;
+        border-radius: 6px; /* Pill shape is nice, but rounded rect is cleaner for status */
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    /* Action Buttons */
+    .btn-group { display: flex; gap: 8px; justify-content: flex-end; }
+    
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+        text-decoration: none;
+    }
+    
+    .btn-ghost { background: transparent; color: var(--text-secondary); }
+    .btn-ghost:hover { background: #f3f4f6; color: var(--text-primary); }
+    
+    .btn-view { background-color: #eff6ff; color: #1d4ed8; }
+    .btn-view:hover { background-color: #dbeafe; }
+    
+    .btn-delete { background-color: #fef2f2; color: #ef4444; }
+    .btn-delete:hover { background-color: #fee2e2; }
+
+    /* Modal Styling */
+    .modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(2px);
+        z-index: 50;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
+    }
+    
+    .modal.show {
+        display: flex;
+        opacity: 1;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        width: 90%;
+        max-width: 600px;
+        max-height: 85vh;
+        overflow-y: auto;
+        transform: scale(0.95);
+        transition: transform 0.2s ease-in-out;
+    }
+    
+    .modal.show .modal-content { transform: scale(1); }
+
+    .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+    .modal-header h3 { font-size: 18px; font-weight: 600; margin: 0; color: var(--text-primary); }
+    
+    .modal-body { padding: 24px; }
+    
+    .modal-footer { padding: 16px 24px; background-color: #f9fafb; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 10px; }
+
+    /* Debug Box */
+    .debug-box {
+        margin-top: 20px;
+        border: 1px solid #e0e7ff;
+        background: #eef2ff;
+        border-radius: 8px;
+    }
+    .debug-summary {
+        padding: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        color: #4338ca;
+        list-style: none; /* Hide default arrow */
+    }
+    .debug-summary::-webkit-details-marker { display: none; }
+    .debug-summary::before {
+        content: '▸';
+        margin-right: 8px;
+    }
+    details[open] .debug-summary::before { content: '▾'; }
+    
+    /* Utilities */
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .font-bold { font-weight: 600; }
+    .mb-4 { margin-bottom: 1rem; }
+    
+    @media (max-width: 640px) {
+        .invoice-table td, .invoice-table th { padding: 12px 16px; }
+        .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+    }
 </style>
 
-<div class="container" style="padding: 40px 20px;">
-    <div style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
+<div class="container">
+    <div class="page-header">
         <div>
-            <h1 style="margin: 0 0 10px 0; color: #2c3e50;">💰 <?= $title ?></h1>
-            <p style="margin: 0; color: #7f8c8d;">
+            <h1 class="page-title">
+                <span style="font-size: 28px;">🧾</span> Invoicing Management
+            </h1>
+            <p class="page-subtitle">
                 <?php if (!empty($filter_partner)): ?>
-                    Menampilkan invoice untuk Partner ID: <strong><?= $filter_partner ?></strong> 
-                    <a href="/odoo-invoicing" style="font-size: 13px; color: #e74c3c; margin-left: 10px;">[Hapus Filter]</a>
+                    Filtered by Partner ID: <strong><?= $filter_partner ?></strong> 
+                    <a href="/odoo-invoicing" style="margin-left:8px; color: var(--danger); text-decoration:none;">✕ Clear Filter</a>
                 <?php else: ?>
-                    Manage customer invoices
+                    Track, manage, and process your customer & vendor invoices.
                 <?php endif; ?>
             </p>
+        </div>
+        <div>
+            <a href="/odoo-dashboard" class="btn btn-ghost" style="border: 1px solid var(--border-color); background: white;">
+                ← Dashboard
+            </a>
         </div>
     </div>
 
     <?php if (empty($invoices)): ?>
-        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; border-radius: 8px;">
-            <strong>⚠️ No Invoices Found</strong>
-            <p style="margin: 10px 0 0 0;">Create your first invoice to get started.</p>
+        <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 16px; border: 1px dashed var(--border-color);">
+            <div style="font-size: 48px; margin-bottom: 20px;">📭</div>
+            <h3 style="margin: 0 0 10px; color: var(--text-primary);">No Invoices Found</h3>
+            <p style="color: var(--text-secondary); max-width: 400px; margin: 0 auto 20px;">
+                It looks like you haven't created any invoices yet. Create one from a Sales Order or waiting for vendor bills.
+            </p>
+            <a href="/odoo-sales" class="btn btn-view" style="display: inline-block;">Go to Sales Orders</a>
         </div>
     <?php else: ?>
-        <div style="background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); overflow: hidden;">
-            <table class="invoice-table">
-                <thead style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white;">
-                    <tr>
-                        <th style="padding: 15px; text-align: left;">Invoice #</th>
-                        <th style="padding: 15px; text-align: left;">Type</th> <!-- New Column -->
-                        <th style="padding: 15px; text-align: left;">Partner</th>
-                        <th style="padding: 15px; text-align: left;">Date</th>
-                        <th style="padding: 15px; text-align: right;">Amount</th>
-                        <th style="padding: 15px; text-align: center;">Status</th>
-                        <th style="padding: 15px; text-align: center;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($invoices as $invoice): ?>
-                        <tr class="invoice-row">
-                            <td style="padding: 15px; font-family: monospace; font-weight: 600; color: #2c3e50;">
-                                <?= $invoice['name'] ?>
-                            </td>
-                            <td style="padding: 15px; font-size: 15px;">
-                                <?php if(($invoice['move_type']??'') === 'in_invoice'): ?>
-                                    <span style="color:#e67e22; background:#fff0d6; padding:4px 8px; border-radius:4px; font-size:14px;">Vendor Bill</span>
-                                <?php else: ?>
-                                    <span style="color:#3498db; background:#eaf2f8; padding:4px 8px; border-radius:4px; font-size:14px;">Customer Inv</span>
-                                <?php endif; ?>
-                            </td>
-                            <td style="padding: 15px; color: #2c3e50; font-size:15px;">
-                                <?= is_array($invoice['partner_id']) ? $invoice['partner_id'][1] : $invoice['partner_id'] ?>
-                            </td>
-                            <td style="padding: 15px; color: #7f8c8d; font-size:15px;">
-                                <?= $invoice['invoice_date'] ? date('Y-m-d', strtotime($invoice['invoice_date'])) : '-' ?>
-                            </td>
-                            <td style="padding: 15px; text-align: right; font-weight: 600; color: #27ae60; font-size:16px;">
-                                Rp <?= number_format($invoice['amount_total'], 0, ',', '.') ?>
-                            </td>
-                            <td style="padding: 15px; text-align: center;">
-                                <?php
-                                $statusColors = [
-                                    'posted' => '#27ae60',
-                                    'draft' => '#95a5a6',
-                                    'cancel' => '#e74c3c'
-                                ];
-                                $color = $statusColors[$invoice['state']] ?? '#95a5a6';
-                                ?>
-                                <span class="status-badge" style="background: <?= $color ?>;">
-                                    <?= strtoupper($invoice['state']) ?>
-                                </span> 
-                            </td>
-                            <td style="padding: 15px; text-align: center;">
-                                <button class="action-btn view btn-view-invoice" data-id="<?= $invoice['id'] ?>">👁️ Lihat</button>
-                                <button class="action-btn delete btn-delete-invoice" data-id="<?= $invoice['id'] ?>" style="margin-left:8px">🗑️ Hapus</button>
-                            </td>
+        <div class="card">
+            <div class="table-container">
+                <table class="invoice-table">
+                    <thead>
+                        <tr>
+                            <th>Invoice #</th>
+                            <th>Type</th>
+                            <th>Partner</th>
+                            <th>Date</th>
+                            <th class="text-right">Amount</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Actions</th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($invoices as $invoice): ?>
+                            <tr>
+                                <td><?= $invoice['name'] ?: '<span style="color:#9ca3af;font-style:italic;">Draft</span>' ?></td>
+                                <td>
+                                    <?php if(($invoice['move_type']??'') === 'in_invoice'): ?>
+                                        <span class="badge badge-in-invoice">Vendor Bill</span>
+                                    <?php else: ?>
+                                        <span class="badge badge-out-invoice">Customer Inv</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <div style="font-weight: 500;"><?= is_array($invoice['partner_id']) ? $invoice['partner_id'][1] : $invoice['partner_id'] ?></div>
+                                </td>
+                                <td style="color: var(--text-secondary);">
+                                    <?= $invoice['invoice_date'] ? date('M d, Y', strtotime($invoice['invoice_date'])) : '-' ?>
+                                </td>
+                                <td class="text-right font-bold" style="color: <?= ($invoice['move_type']??'') === 'in_invoice' ? '#dc2626' : '#059669' ?>;">
+                                    Rp <?= number_format($invoice['amount_total'], 0, ',', '.') ?>
+                                </td>
+                                <td class="text-center">
+                                    <?php
+                                    $statusStyles = [
+                                        'posted' => 'background:#d1fae5; color:#065f46;',
+                                        'draft' => 'background:#f3f4f6; color:#4b5563;',
+                                        'cancel' => 'background:#fee2e2; color:#991b1b;'
+                                    ];
+                                    $style = $statusStyles[$invoice['state']] ?? 'background:#f3f4f6; color:#4b5563;';
+                                    ?>
+                                    <span class="status-badge" style="<?= $style ?>">
+                                        <?= strtoupper($invoice['state']) ?>
+                                    </span> 
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-view btn-view-invoice" data-id="<?= $invoice['id'] ?>" title="View Details">
+                                            👁️
+                                        </button>
+                                        <button class="btn btn-delete btn-delete-invoice" data-id="<?= $invoice['id'] ?>" title="Delete">
+                                            🗑️
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     <?php endif; ?>
-    
-    <div style="margin-top: 30px; text-align: center;">
-        <a href="/odoo-dashboard" style="color: #3498db; text-decoration: none;">← Back to Dashboard</a>
-    </div>
 
-    <!-- Invoice Popup Modal -->
+    <!-- Collapsible Debug Section -->
+    <?php if (!empty($invoice_debug)): ?>
+        <details class="debug-box">
+            <summary class="debug-summary">Debug Information (Click to expand)</summary>
+            <div style="padding: 16px; overflow-x: auto;">
+                <table style="width:100%; border-collapse:collapse; font-size:12px; font-family: monospace;">
+                    <thead>
+                        <tr style="text-align:left; border-bottom: 2px solid #e0e7ff;">
+                            <th style="padding:8px">Step</th>
+                            <th style="padding:8px">Success</th>
+                            <th style="padding:8px">Count</th>
+                            <th style="padding:8px">Error</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($invoice_debug as $d): ?>
+                            <tr style="border-bottom: 1px solid #e0e7ff;">
+                                <td style="padding:8px;"><?= htmlspecialchars($d['step']) ?></td>
+                                <td style="padding:8px;">
+                                    <span style="color: <?= !empty($d['success']) ? 'green' : 'red' ?>">
+                                        <?= !empty($d['success']) ? 'YES' : 'NO' ?>
+                                    </span>
+                                </td>
+                                <td style="padding:8px;"><?= isset($d['count']) ? (int)$d['count'] : '-' ?></td>
+                                <td style="padding:8px; color:#c0392b;"><?= isset($d['error']) ? htmlspecialchars($d['error']) : '-' ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+    <?php endif; ?>
+
+    <!-- Modal HTML maintained but class names updated to match new CSS -->
     <div id="invoicePopupModal" class="modal">
-        <div class="modal-content card" role="dialog" aria-modal="true">
-            <div class="modal-header"><h3 id="invPopupTitle">Invoice</h3></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="invPopupTitle">Invoice</h3>
+                <button id="invPopupClose" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-secondary);">&times;</button>
+            </div>
             <div id="invPopupBody" class="modal-body"></div>
             <div class="modal-footer">
-                <button id="invPopupClose" class="action-btn">Close</button>
-                <button id="invPopupPost" class="action-btn view" style="display:none;">✅ Post</button>
-                <button id="invPopupDelete" class="action-btn delete" style="display:none;">🗑️ Delete</button>
+                <button id="invPopupPost" class="btn btn-view" style="background-color:var(--success); color:white; display:none;">✅ Post Invoice</button>
+                <button id="invPopupDelete" class="btn btn-delete" style="display:none;">🗑️ Delete</button>
+                <button id="invPopupPay" class="btn" style="display:none; background:#8b5cf6; color:white;">💰 Register Payment</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-(function(){
+// Kept script logic mostly same, with minor UI tweaks
+
     function showModal(){ document.getElementById('invoicePopupModal').classList.add('show'); }
     function hideModal(){ document.getElementById('invoicePopupModal').classList.remove('show'); }
 
@@ -142,7 +388,8 @@
         let html = `<div style="display:flex; justify-content:space-between; align-items:center;">
             <div>
                 <div style="font-weight:700; font-size:18px;">${inv.name}</div>
-                <div style="color:#7f8c8d; margin-top:4px;">${is_array_or_name(inv.partner_id)}</div>
+                <div style="color:#7f8c8d; margin-top:4px;">${is_array_or_name(inv.partner_id)} (${inv.move_type === 'in_invoice' ? 'Vendor Bill' : 'Customer Invoice'})</div>
+                <div style="color:#7f8c8d; margin-top:4px;">Origin: ${inv.invoice_origin || '-'}</div>
             </div>
             <div style="text-align:right;">
                 <div style="font-weight:700; font-size:20px; color:#2c3e50;">Rp ${formatCurrency(inv.amount_total)}</div>
@@ -159,6 +406,12 @@
             });
             html += '</tbody></table>';
         } else {
+            // If no lines and invoice has invoice_origin, offer create from order (best-effort)
+            if (inv.invoice_origin) {
+                html += `<div style="margin-top:12px;">`;
+                html += `<button id="createFromOrderBtn" class="action-btn view">Buat invoice dari order ${inv.invoice_origin}</button>`;
+                html += `</div>`;
+            }
             html += '<div style="padding:10px; color:#7f8c8d;">No lines available</div>';
         }
 
@@ -204,6 +457,29 @@
             const postBtn = document.getElementById('invPopupPost');
             const payBtn = document.getElementById('invPopupPay');
             const delBtn = document.getElementById('invPopupDelete');
+
+            // Create-from-order button handler (if present)
+            const createBtn = document.getElementById('createFromOrderBtn');
+            if (createBtn) {
+                createBtn.onclick = function(){
+                    if (confirm('Buat invoice dari order ' + (inv.invoice_origin || '') + '?')) {
+                        const soName = inv.invoice_origin;
+                        // Try both purchase and sale creation (guess by move_type)
+                        const type = (inv.move_type === 'in_invoice') ? 'purchase' : 'sale';
+                        safeFetchJson(`/api.php?action=create_invoice_from_order&type=${type}&id=${encodeURIComponent(inv.invoice_origin.replace(/[^0-9]/g,''))}&post_now=1`)
+                            .then(r => {
+                                if (r && r.success && r.invoice_id) {
+                                    alert('Invoice dibuat: ' + r.invoice_id);
+                                    loadInvoiceToModal(r.invoice_id);
+                                    location.reload();
+                                } else {
+                                    alert('Gagal membuat invoice: ' + (r.error || 'Unknown'));
+                                }
+                            })
+                            .catch(e => alert('Error: ' + e.message));
+                    }
+                };
+            }
 
             postBtn.style.display = (inv.state === 'draft') ? 'inline-block' : 'none';
             payBtn.style.display = (inv.state === 'posted') ? 'inline-block' : 'none';
@@ -271,25 +547,75 @@
     }
 
     // Attach row handlers
-    document.querySelectorAll('.btn-view-invoice').forEach(btn=>btn.addEventListener('click', function(e){ const id=this.dataset.id; loadInvoiceToModal(id); }));
-    document.querySelectorAll('.btn-delete-invoice').forEach(btn=>btn.addEventListener('click', async function(e){
-        const id = this.dataset.id;
+    document.querySelectorAll('.btn-view-invoice').forEach(btn=>btn.addEventListener('click', function(e){ 
+        const id = this.dataset.id; 
+        const soId = this.dataset.soid || null;
+        const name = this.dataset.name || null;
+        if (id) {
+            loadInvoiceToModal(id);
+        } else if (soId) {
+            safeFetchJson(`/api.php?action=find_invoice_by_order&type=purchase&id=${encodeURIComponent(soId)}`)
+                .then(resp => {
+                    if (resp && resp.success && Array.isArray(resp.data) && resp.data.length > 0) {
+                        const foundId = resp.data[0].id || resp.data[0];
+                        loadInvoiceToModal(foundId);
+                    } else {
+                        if (confirm('Invoice tidak ditemukan untuk PO ini. Buat invoice dari PO sekarang?')) {
+                            safeFetchJson(`/api.php?action=create_invoice_from_order&type=purchase&id=${encodeURIComponent(soId)}&post_now=1`)
+                                .then(r => {
+                                    if (r && r.success && r.invoice_id) {
+                                        alert('Invoice dibuat (ID: ' + r.invoice_id + ')');
+                                        loadInvoiceToModal(r.invoice_id);
+                                        window.location.reload();
+                                    } else {
+                                        alert('Gagal membuat invoice: ' + (r.error || 'Unknown'));
+                                    }
+                                })
+                                .catch(e => alert('Error: ' + e.message));
+                        }
+                    }
+                }).catch(e => alert('Error: ' + e.message));
+        } else {
+            alert('Invoice ID tidak tersedia');
+        }
+    }));
+    // Delegated handler for delete buttons — more robust and better error handling
+    document.querySelector('.table-container').addEventListener('click', async function(e) {
+        const btn = e.target.closest('.btn-delete-invoice');
+        if (!btn) return;
+        e.preventDefault();
+
+        const id = btn.dataset.id;
+        if (!id) { alert('Invoice ID invalid'); return; }
+        if (!confirm('Hapus invoice ' + id + ' ?')) return;
+
+        btn.disabled = true;
         try {
-            if(!id) { alert('Invoice ID invalid'); return; }
-            if(!confirm('Hapus invoice '+id+' ?')) return;
-            const btn = this; btn.disabled = true;
+            const resp = await fetch('/api.php?action=delete_invoice', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ id: id })
+            });
 
-            const resp = await fetch('/api.php?action=delete_invoice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id})});
+            const text = await resp.text();
             let res;
-            try { res = await resp.json(); } catch (parseErr) { const txt = await resp.text(); console.error('Failed to parse delete response:', parseErr, txt); alert('Server returned invalid response saat menghapus (lihat console)'); return; }
+            try { res = JSON.parse(text); } catch (parseErr) { console.error('Failed to parse delete response:', parseErr, text); alert('Server returned invalid response saat menghapus (lihat console)'); return; }
 
-            if (res && res.success) { alert('Invoice dihapus'); location.reload(); }
-            else { console.error('Delete invoice failed:', res); alert('Gagal: '+(res && (res.error||res.message) ? (res.error||res.message) : 'Unknown')); }
+            if (res && res.success) {
+                alert('Invoice dihapus');
+                // Remove row from table for immediate feedback
+                const row = btn.closest('tr'); if (row) row.remove();
+            } else {
+                console.error('Delete invoice failed:', res);
+                alert('Gagal: ' + (res && (res.error || res.message) ? (res.error || res.message) : 'Unknown'));
+            }
         } catch (err) {
             console.error('Error deleting invoice:', err);
-            alert('Error: '+(err && err.message ? err.message : err));
-        } finally { try { this.disabled = false; } catch (e) {} }
-    }));
+            alert('Error saat menghapus invoice: ' + (err && err.message ? err.message : err));
+        } finally {
+            try { btn.disabled = false; } catch (e) {}
+        }
+    });
 
 })();
 </script>
