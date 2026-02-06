@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8082:80"
+      - "8076:80"
     volumes:
       - .:/var/www/html
     depends_on:
@@ -16,8 +16,8 @@ services:
       DB_USERNAME: root
       DB_PASSWORD: secret
       ODOO_URL: "http://odoo:8069"
-      ODOO_DB: "odoo19"
-      ODOO_USERNAME: "admin"
+      ODOO_DB: "new-odoo"
+      ODOO_USERNAME: "admin@gmail.com"
       ODOO_PASSWORD: "admin"
     restart: unless-stopped
     logging:
@@ -32,7 +32,7 @@ services:
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_DATABASE: phalcon_db
     ports:
-      - "2237:3306"
+      - "8306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -46,7 +46,7 @@ services:
       PMA_USER: root
       PMA_PASSWORD: secret
     ports:
-      - "3307:80"
+      - "8307:80"
     depends_on: 
 
 
@@ -62,7 +62,7 @@ services:
     volumes:
       - coba_postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "8432:5432"
     restart: unless-stopped
 
   odoo:
@@ -70,12 +70,13 @@ services:
     depends_on:
       - postgres
     ports:
-      - "8069:8069"
+      - "8070:8069"
     environment:
       - HOST=postgres
+      - PORT=5432
       - USER=odoo
       - PASSWORD=odoo
-      - DB=odoo19
+      - DB=new-odoo
       - ODOO_DEMO=False
     volumes:
       - coba_odoo_data:/var/lib/odoo

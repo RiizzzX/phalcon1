@@ -14,25 +14,92 @@ class OdooInvoicingController extends OdooControllerBase
         try {
             // Optional partner filter via query param
             $partnerId = (int)$this->request->getQuery('partner_id');
-            // Allow both in_invoice (vendor bill) and out_invoice (customer invoice)
-            $domain = [['move_type', 'in', ['out_invoice', 'in_invoice']]];
-            
+
+            // Prefer a broad set of invoice-like move_types, but fall back if Odoo fields/versions differ
+            $preferredTypes = ['out_invoice', 'in_invoice', 'out_refund', 'in_refund'];
+            $domain = [['move_type', 'in', $preferredTypes]];
             if ($partnerId) {
                 // If partner provided, strict filter
                 $domain[] = ['partner_id', '=', $partnerId];
             }
 
-            $invoices = $this->odoo->executePublic('account.move', 'search_read',
-                [$domain], // args: domain
-                ['fields' => ['name', 'partner_id', 'invoice_date', 'amount_total', 'state', 'move_type']] // kwargs
-            );
+            // Primary attempt: domain with preferred types
+            $fetchDebug = [];
+            try {
+                $invoices = $this->odoo->executePublic('account.move', 'search_read',
+                    [$domain],
+                    ['fields' => ['name', 'partner_id', 'invoice_date', 'amount_total', 'state', 'move_type'], 'limit' => 250]
+                );
+                $fetchDebug[] = ['step' => 'primary', 'success' => true, 'count' => is_array($invoices) ? count($invoices) : 0];
+            } catch (\Exception $e) {
+                $fetchDebug[] = ['step' => 'primary', 'success' => false, 'error' => $e->getMessage()];
+                error_log('Warning: invoice primary domain fetch failed: ' . $e->getMessage());
+                $invoices = [];
+            }
+
+            // Fallback 1: try the simpler in/out invoices only
+            if (empty($invoices)) {
+                try {
+                    $domain2 = [['move_type', 'in', ['out_invoice', 'in_invoice']]];
+                    if ($partnerId) $domain2[] = ['partner_id', '=', $partnerId];
+                    $invoices = $this->odoo->executePublic('account.move', 'search_read',
+                        [$domain2],
+                        ['fields' => ['name', 'partner_id', 'invoice_date', 'amount_total', 'state', 'move_type'], 'limit' => 250]
+                    );
+                    if (!empty($invoices)) {
+                        $fetchDebug[] = ['step' => 'fallback1', 'success' => true, 'count' => count($invoices)];
+                        error_log('Notice: invoice fetch succeeded with simpler domain');
+                    } else {
+                        $fetchDebug[] = ['step' => 'fallback1', 'success' => true, 'count' => 0];
+                    }
+                } catch (\Exception $e) {
+                    error_log('Warning: invoice fallback domain fetch failed: ' . $e->getMessage());
+                    $invoices = [];
+                }
+            }
+
+            // Fallback 2: fetch recent moves and filter client-side (best-effort) to handle custom/missing fields
+            if (empty($invoices)) {
+                try {
+                    $all = $this->odoo->executePublic('account.move', 'search_read',
+                        [[]],
+                        ['fields' => ['id','name', 'partner_id', 'invoice_date', 'amount_total', 'state', 'move_type'], 'limit' => 500]
+                    );
+                    $filtered = [];
+                    if (is_array($all)) {
+                        foreach ($all as $m) {
+                            $mt = $m['move_type'] ?? '';
+                            if ($mt && (str_contains($mt, 'invoice') || str_contains($mt, 'refund'))) {
+                                if ($partnerId) {
+                                    $pid = is_array($m['partner_id']) ? (int)$m['partner_id'][0] : (int)$m['partner_id'];
+                                    if ($pid !== $partnerId) continue;
+                                }
+                                $filtered[] = $m;
+                            }
+                        }
+                    }
+                    $invoices = array_values($filtered);
+                    if (!empty($invoices)) {
+                        $fetchDebug[] = ['step' => 'fallback2', 'success' => true, 'count' => count($invoices)];
+                        error_log('Notice: invoice fetch succeeded via fallback client-side filter');
+                    } else {
+                        $fetchDebug[] = ['step' => 'fallback2', 'success' => true, 'count' => 0];
+                    }
+                } catch (\Exception $e) {
+                    error_log('Warning: invoice final fallback fetch failed: ' . $e->getMessage());
+                    $invoices = [];
+                }
+            }
             
             $this->view->invoices = $invoices ?: [];
+            // expose debug details to the view for troubleshooting
+            $this->view->invoice_debug = $fetchDebug ?? [];
             $this->view->title = "Invoices";
             $this->view->filter_partner = $partnerId ?: null;
         } catch (\Exception $e) {
             $this->flash->error("Error: " . $e->getMessage());
             $this->view->invoices = [];
+            $this->view->title = "Invoices";
         }
     }
     

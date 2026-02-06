@@ -258,6 +258,18 @@ $router->add('/odoo/inventory', [
     'action' => 'index'
 ])->setName('odoo_inventory_index_slash');
 
+// Direct script compatibility: allow the legacy scripts/test_odoo.php path to be called via the framework
+$router->add('/scripts/test_odoo.php', [
+    'controller' => 'scripts',
+    'action' => 'testOdoo'
+])->setName('scripts_test_odoo');
+
+// Also support a cleaner path
+$router->add('/scripts/test-odoo', [
+    'controller' => 'scripts',
+    'action' => 'testOdoo'
+])->setName('scripts_test_odoo_clean');
+
 $router->add('/odoo/purchase', [
     'controller' => 'odooPurchase',
     'action' => 'index'

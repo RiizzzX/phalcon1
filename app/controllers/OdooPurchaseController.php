@@ -240,14 +240,14 @@ class OdooPurchaseController extends OdooControllerBase
             }
         }
         
-        // Get suppliers from local users table
+        // Get suppliers from local users table (filter to suppliers only)
         try {
             $db = new \PDO(
                 "mysql:host={$_ENV['DB_HOST']};dbname={$_ENV['DB_NAME']};charset=utf8",
                 $_ENV['DB_USERNAME'],
                 $_ENV['DB_PASSWORD']
             );
-            $stmt = $db->query("SELECT id, name, email FROM users");
+            $stmt = $db->query("SELECT id, name, email FROM users WHERE is_supplier = 1 ORDER BY id DESC");
             $suppliers = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $this->view->suppliers = $suppliers ?: [];
         } catch (\Exception $e) {

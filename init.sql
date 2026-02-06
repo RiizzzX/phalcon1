@@ -49,7 +49,11 @@ CREATE TABLE IF NOT EXISTS `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL,
+  `phone` varchar(50) DEFAULT NULL,
+  `odoo_id` int(11) DEFAULT NULL,
   `password` varchar(255) DEFAULT NULL,
+  `is_customer` tinyint(1) DEFAULT '0',
+  `is_supplier` tinyint(1) DEFAULT '0',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_email` (`email`)

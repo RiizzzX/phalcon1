@@ -1,0 +1,144 @@
+<!-- Customer Modal (partial) -->
+<div class="modal" id="customerModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>➕ Tambah Customer</h3>
+        </div>
+        <div id="customerMsg" style="margin-bottom: 10px;"></div>
+
+        <div class="form-group">
+            <label>Nama Customer <span style="color:#e74c3c">*</span></label>
+            <input id="customer_name" name="name" type="text" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
+        </div>
+
+        <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div>
+                <label>Email</label>
+                <input id="customer_email" name="email" type="email" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
+            </div>
+            <div>
+                <label>Telepon</label>
+                <input id="customer_phone" name="phone" type="text" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:6px;">
+            <label style="font-weight:600; display:block; margin-bottom:6px;">Simpan ke:</label>
+            <label style="display:inline-flex; align-items:center; gap:8px; margin-right:12px;"><input type="radio" name="save_to" value="local" checked> Lokal</label>
+            <label style="display:inline-flex; align-items:center; gap:8px;"><input type="radio" name="save_to" value="odoo"> Odoo</label>
+        </div>
+        <div class="modal-footer" style="margin-top:12px; text-align:right;">
+            <button type="button" id="customerCancel" class="btn btn-secondary">Batal</button>
+            <button type="button" id="customerSave" class="btn btn-success">Simpan</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function(){
+    const modal = document.getElementById('customerModal');
+    const openButtons = document.querySelectorAll('[data-open-customer]');
+    const cancelBtn = document.getElementById('customerCancel');
+    const saveBtn = document.getElementById('customerSave');
+    const msgBox = document.getElementById('customerMsg');
+
+    // Define toast if not already defined
+    if (!window.showToast) {
+        window.showToast = function(msg, type = 'info') {
+            let t = document.getElementById('globalToast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'globalToast';
+                t.style.position = 'fixed';
+                t.style.right = '20px';
+                t.style.top = '20px';
+                t.style.zIndex = 99999;
+                t.style.padding = '10px 16px';
+                t.style.borderRadius = '8px';
+                t.style.boxShadow = '0 6px 18px rgba(0,0,0,0.12)';
+                t.style.transition = 'opacity 0.3s ease';
+                t.style.opacity = '0';
+                document.body.appendChild(t);
+            }
+            t.textContent = msg;
+            t.style.background = (type === 'success') ? '#d4edda' : (type === 'danger' ? '#f8d7da' : '#d1ecf1');
+            t.style.color = (type === 'success') ? '#155724' : (type === 'danger' ? '#721c24' : '#0c5460');
+            t.style.opacity = '1';
+            setTimeout(() => { t.style.opacity = '0'; }, 2500);
+        };
+    }
+
+    function showCustomerModal() {
+        if (modal) modal.classList.add('show');
+    }
+    function closeCustomerModal() {
+        if (modal) modal.classList.remove('show');
+        if (msgBox) msgBox.innerHTML = '';
+        if (document.getElementById('customer_name')) document.getElementById('customer_name').value = '';
+        if (document.getElementById('customer_email')) document.getElementById('customer_email').value = '';
+        if (document.getElementById('customer_phone')) document.getElementById('customer_phone').value = '';
+    }
+
+    // Expose
+    window.showCustomerModal = showCustomerModal;
+    window.closeCustomerModal = closeCustomerModal;
+
+    openButtons.forEach(btn => btn.addEventListener('click', showCustomerModal));
+    if (cancelBtn) cancelBtn.addEventListener('click', closeCustomerModal);
+
+    if (saveBtn) saveBtn.addEventListener('click', function() {
+        const name = (document.getElementById('customer_name') || {}).value || '';
+        const email = (document.getElementById('customer_email') || {}).value || '';
+        const phone = (document.getElementById('customer_phone') || {}).value || '';
+
+        if (!name.trim()) {
+            msgBox.innerHTML = '<div class="alert alert-danger show">Nama customer wajib diisi</div>';
+            return;
+        }
+
+        msgBox.innerHTML = '<div class="alert alert-info show">Menyimpan...</div>';
+
+        const formData = new FormData();
+        formData.append('name', name.trim());
+        formData.append('email', email.trim());
+        formData.append('phone', phone.trim());
+
+        fetch('/api.php?action=create_customer', {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data && data.success) {
+                const sel = document.querySelector('select[name="partner_id"]');
+                if (sel) {
+                    const opt = document.createElement('option');
+                    if (data.partner_id) {
+                        opt.value = data.partner_id;
+                        opt.dataset.localId = data.id;
+                        opt.textContent = data.name;
+                    } else {
+                        opt.value = 'local-' + data.id;
+                        opt.dataset.localId = data.id;
+                        opt.textContent = data.name + ' (lokal)';
+                    }
+                    sel.appendChild(opt);
+                    sel.value = opt.value;
+
+                if (typeof showToast === 'function') showToast('Customer berhasil dibuat', 'success');
+
+                }
+
+                msgBox.innerHTML = '<div class="alert alert-success show">Customer berhasil dibuat</div>';
+                if (typeof loadCustomers === 'function') try { loadCustomers(); } catch (e) {}
+                setTimeout(() => { closeCustomerModal(); }, 600);
+            } else {
+                msgBox.innerHTML = '<div class="alert alert-danger show">Gagal: ' + (data.error || 'Unknown error') + '</div>';
+            }
+        })
+        .catch(err => {
+            msgBox.innerHTML = '<div class="alert alert-danger show">Error: ' + (err.message || err) + '</div>';
+        });
+    });
+})();
+</script>

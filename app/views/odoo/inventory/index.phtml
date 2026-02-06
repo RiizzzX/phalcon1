@@ -68,8 +68,7 @@
         <div class="header-left">
             <a href="/odoo/dashboard" class="btn btn-secondary">← Kembali ke Dashboard</a>
         </div>
-        <div class="header-right">
-            <button onclick="openAddModal()" class="btn btn-primary">+ Tambah Produk</button>
+        <div class="header-right">            <button onclick="syncFromOdoo()" class="btn btn-secondary" style="margin-right: 10px;">Sync with Odoo</button>            <button onclick="openAddModal()" class="btn btn-primary">+ Tambah Produk</button>
         </div>
     </div>
 
@@ -131,6 +130,9 @@
                                     <button onclick='openViewModal(<?= json_encode($product->toArray()) ?>)' class="btn btn-primary btn-sm">View</button>
                                     <button onclick='openEditModal(<?= json_encode($product->toArray()) ?>)' class="btn btn-warning btn-sm">Edit</button>
                                     <button onclick="deleteProduct(<?= $product->id ?>)" class="btn btn-danger btn-sm">Delete</button>
+                                    <?php if (!$product->synced_to_odoo): ?>
+                                        <button onclick="retryPush(<?= $product->id ?>)" id="retry-<?= $product->id ?>" class="btn btn-secondary btn-sm">Retry Push</button>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
@@ -139,7 +141,25 @@
             </table>
         </div>
     <?php endif; ?>
-</div>
+
+    <?php // Optional customer modal: robust include with readability checks and graceful fallback to avoid PHP warnings
+    $customerPartial = __DIR__ . '/_customer_modal.phtml';
+    if (is_file($customerPartial) && is_readable($customerPartial)) {
+        include_once $customerPartial;
+    } else {
+        // Fallback: harmless placeholder so markup/scripts that expect the modal won't break
+        echo "<!-- _customer_modal.phtml not available. To enable customer modal, add the partial at: $customerPartial -->";
+    }
+
+    // Debug helper: show file info when ?debug_inventory_include=1 and request from localhost
+    if (isset($_GET['debug_inventory_include']) && $_GET['debug_inventory_include'] == '1' && (($_SERVER['REMOTE_ADDR'] ?? '') === '127.0.0.1' || ($_SERVER['REMOTE_ADDR'] ?? '') === '::1')) {
+        $exists = is_file($customerPartial) ? 'yes' : 'no';
+        $read = is_readable($customerPartial) ? 'yes' : 'no';
+        $stat = @stat($customerPartial);
+        $perms = $stat ? substr(sprintf('%o', $stat['mode']), -4) : 'n/a';
+        echo "<pre style=\"background:#fff8c5;padding:10px;border-radius:6px;border:1px solid #f0e6b8;color:#333;\">Inventory include debug:\n  path: $customerPartial\n  exists: $exists\n  readable: $read\n  perms: $perms\n  web_remote: " . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . "\n</pre>";
+    }
+    </div>
 
 <!-- Modal: Add Product -->
 <div id="addModal" class="modal">
@@ -171,7 +191,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Harga Jual *</label>
-                    <input type="number" name="selling_price" step="0.01" min="0" required>
+                    <input type="number" name="selling_price" step="0.01" min="0" max="99999999.99" required>
                 </div>
                 <div class="form-group">
                     <label>Harga Pokok</label>
@@ -236,7 +256,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Harga Jual *</label>
-                    <input type="number" id="editPrice" name="selling_price" step="0.01" min="0" required>
+                    <input type="number" id="editPrice" name="selling_price" step="0.01" min="0" max="99999999.99" required>
                 </div>
                 <div class="form-group">
                     <label>Harga Pokok</label>
@@ -358,24 +378,87 @@ function submitAdd(e) {
     const params = new URLSearchParams();
     new FormData(form).forEach((v,k) => params.append(k, v));
 
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = 'Saving...'; }
+
     fetch('/api.php?action=create_inventory', { 
         method: 'POST', 
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: params.toString()
     })
-    .then(r => r.json())
-    .then(data => {
+    .then(r => r.text())
+    .then(text => {
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (err) {
+            console.error('Invalid JSON response from server:', text);
+            alert('Server returned invalid response:\n' + text);
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Simpan'; }
+            return;
+        }
+
         if (data.success) {
-            closeAddModal();
-            window.location.reload();
+            const push = data.odoo_push || {};
+            if (push.pushed) {
+                alert('Product saved and synced to Odoo (id: ' + (push.odoo_id || '-') + ').');
+                closeAddModal();
+                window.location.reload();
+            } else if (push.error) {
+                const tryNow = confirm('Product saved locally, but failed to push to Odoo: ' + push.error + (push.log_file ? '\n\nDebug file: ' + push.log_file : '') + "\n\nRetry push now?");
+                closeAddModal();
+                if (tryNow) {
+                    retryPush(data.id);
+                } else {
+                    window.location.reload();
+                }
+            } else {
+                alert('Product saved locally. Sync status unknown.');
+                closeAddModal();
+                window.location.reload();
+            }
         } else {
-            alert('Error: ' + data.message);
+            const msg = data.message || data.error || 'Unknown error';
+            alert('Error: ' + msg);
         }
     })
     .catch(e => {
-        alert('Error: ' + e.message);
+        alert('Error: ' + (e.message || 'Network error'));
+    })
+    .finally(() => {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Simpan'; }
     });
-}
+} 
+
+function retryPush(id) {
+    if (!confirm('Retry push to Odoo for product #' + id + '?')) return;
+    const btn = document.getElementById('retry-' + id);
+    const orig = btn ? btn.innerText : null;
+    if (btn) { btn.disabled = true; btn.innerText = 'Retrying...'; }
+    fetch('/api.php?action=push_inventory&id=' + encodeURIComponent(id), { method: 'POST' })
+    .then(r => r.text())
+    .then(text => {
+        let data;
+        try { data = JSON.parse(text); } catch (err) {
+            console.error('Invalid JSON from push_inventory:', text);
+            alert('Invalid response from server:\n' + text);
+            if (btn) { btn.disabled = false; btn.innerText = orig; }
+            return;
+        }
+        const push = data.odoo_push || {};
+        if (push.pushed) {
+            alert('Push succeeded: Odoo product id ' + push.odoo_id);
+            window.location.reload();
+        } else {
+            alert('Push failed: ' + (push.error || 'Unknown error') + (push.log_file ? '\n\nDebug file: ' + push.log_file + '\n(Check app/temp on server)' : ''));
+            if (btn) { btn.disabled = false; btn.innerText = orig; }
+        }
+    })
+    .catch(e => {
+        alert('Network error: ' + (e.message || 'Failed to connect'));
+        if (btn) { btn.disabled = false; btn.innerText = orig; }
+    });
+} 
 
 function submitEdit(e) {
     e.preventDefault();
@@ -389,17 +472,24 @@ function submitEdit(e) {
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: params.toString() + '&id=' + encodeURIComponent(id)
     })
-    .then(r => r.json())
-    .then(data => {
+    .then(r => r.text())
+    .then(text => {
+        let data;
+        try { data = JSON.parse(text); } catch (err) {
+            console.error('Invalid JSON from edit_inventory:', text);
+            alert('Server returned invalid response:\n' + text);
+            return;
+        }
         if (data.success) {
             closeEditModal();
             window.location.reload();
         } else {
-            alert('Error: ' + data.message);
+            const msg = data.message || data.error || 'Unknown error';
+            alert('Error: ' + msg);
         }
     })
     .catch(e => {
-        alert('Error: ' + e.message);
+        alert('Error: ' + (e.message || 'Network error'));
     });
 }
 
@@ -411,11 +501,46 @@ function deleteProduct(id) {
                 if (data.success) {
                     window.location.reload();
                 } else {
-                    alert('Error: ' + data.message);
+                    const msg = data.message || data.error || 'Unknown error';
+                    alert('Error: ' + msg);
                 }
             })
-            .catch(e => alert('Error: ' + e.message));
+            .catch(e => alert('Error: ' + (e.message || 'Network error')));
     }
+}
+
+function syncFromOdoo() {
+    if(!confirm('This will synchronize local products with Odoo. Continue?')) return;
+    
+    const btn = event.target;
+    const originalText = btn.innerText;
+    btn.innerText = 'Syncing...';
+    btn.disabled = true;
+
+    fetch('/api.php?action=sync_products')
+        .then(res => res.text())
+        .then(text => {
+            let data;
+            try { data = JSON.parse(text); } catch (err) {
+                console.error('Invalid JSON from sync_products:', text);
+                alert('Sync failed. Invalid server response:\n' + text);
+                return;
+            }
+            if (data.success) {
+                alert(data.message || 'Sync successful!');
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Failed to connect to API');
+        })
+        .finally(() => {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        });
 }
 
 // Close modal when clicking outside

@@ -241,6 +241,22 @@
         </div>
     </div>
 
+    <!-- Modal: View Invoice -->
+    <div class="modal" id="modalInvoice">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <h2 id="invModalTitle">Invoice Detail</h2>
+                <button type="button" class="btn btn-danger btn-small" onclick="closeInvoiceModal()" style="padding:4px 8px;">✕</button>
+            </div>
+            <div id="invModalBody" style="max-height: 70vh; overflow-y: auto;">
+                <div style="text-align:center; padding: 20px;">Loading...</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeInvoiceModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_URL = '/api.php';
         let currentAction = null;
@@ -344,8 +360,15 @@
                     actionBtns += `<button class="btn btn-danger btn-small" onclick="confirmAction('cancel', ${order.id}, 'Batalkan SO ini?')">❌ Batalkan</button>`;
                 }
 
+                // Show View Invoice if confirmed; support fallback search by order when invoice_ids missing
+                if (order.state === 'sale' || order.state === 'done') {
+                    const invId = (order.invoice_ids && order.invoice_ids.length > 0) ? order.invoice_ids[0] : '';
+                    const invLabel = invId ? `📄 Lihat Invoice (#${invId})` : '📄 Lihat Invoice';
+                    actionBtns += `<button class="btn btn-primary btn-small btn-view-invoice" data-invid="${invId}" data-soid="${order.id}" data-name="${order.name}">${invLabel}</button> `;
+                }
+
                 // Show delete only for confirmed (sale) or cancelled orders per preference
-                if (order.state === 'sale' || order.state === 'cancel') {
+                if (order.state === 'sale' || order.state === 'cancel' || order.state === 'done') {
                     actionBtns += `<button class="btn btn-danger btn-small" onclick="confirmAction('delete', ${order.id}, 'Hapus SO ini?')">🗑️ Hapus</button>`;
                 }
 
@@ -363,6 +386,40 @@
 
             tableContainer.style.display = 'block';
             emptyState.style.display = 'none';
+
+            // Attach handlers for view-invoice buttons (support fallback find/create invoice)
+            document.querySelectorAll('.btn-view-invoice').forEach(btn=>btn.addEventListener('click', function(e){
+                const invId = this.dataset.invid;
+                const soId = this.dataset.soid;
+                const name = this.dataset.name;
+                if (invId) {
+                    viewInvoice(invId, name);
+                } else if (soId) {
+                    safeFetchJson(`/api.php?action=find_invoice_by_order&type=sale&id=${encodeURIComponent(soId)}`)
+                        .then(resp => {
+                            if (resp && resp.success && Array.isArray(resp.data) && resp.data.length > 0) {
+                                const foundId = resp.data[0].id || resp.data[0];
+                                viewInvoice(foundId, name);
+                            } else {
+                                if (confirm('Invoice tidak ditemukan untuk SO ini. Buat invoice dari SO sekarang?')) {
+                                    safeFetchJson(`/api.php?action=create_invoice_from_order&type=sale&id=${encodeURIComponent(soId)}&post_now=1`)
+                                        .then(r => {
+                                            if (r && r.success && r.invoice_id) {
+                                                alert('Invoice dibuat (ID: ' + r.invoice_id + ')');
+                                                viewInvoice(r.invoice_id, name);
+                                                loadSalesOrders();
+                                            } else {
+                                                alert('Gagal membuat invoice: ' + (r.error || 'Unknown'));
+                                            }
+                                        })
+                                        .catch(e => alert('Error: ' + e.message));
+                                }
+                            }
+                        }).catch(e => alert('Error: ' + e.message));
+                } else {
+                    alert('Invoice ID tidak tersedia');
+                }
+            }));
         }
 
         function getStateLabel(state) {
@@ -609,6 +666,13 @@
                     if (data.success) {
                         const msg = currentAction === 'confirm' ? 'Sales Order dikonfirmasi!' : 'Sales Order dibatalkan!';
                         showAlert(msg, 'success');
+
+                        // If server created invoice(s), open the first one automatically
+                        if (Array.isArray(data.invoice_ids) && data.invoice_ids.length > 0) {
+                            const firstInv = data.invoice_ids[0];
+                            try { viewInvoice(firstInv, 'SO ' + (data.so_name || currentSOId)); } catch (e) { console.debug('Failed to auto-open invoice', e); }
+                        }
+
                         loadSalesOrders();
                     } else {
                         showAlert('Error: ' + data.error, 'danger');
@@ -665,11 +729,134 @@
             });
         }
 
+        async function safeFetchJson(url, options = {}) {
+            try {
+                const response = await fetch(url, options);
+                const text = await response.text();
+                try {
+                    const data = JSON.parse(text);
+                    return data;
+                } catch (e) {
+                    return { success: false, errorHtml: text };
+                }
+            } catch (err) {
+                return { success: false, error: err.message };
+            }
+        }
+
         function formatCurrency(value) {
-            return parseFloat(value).toLocaleString('id-ID', {
+            if (value === null || value === undefined) return '0';
+            const val = parseFloat(value);
+            return isNaN(val) ? '0' : val.toLocaleString('id-ID', {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 2
             });
+        }
+
+        function viewInvoice(id, soName) {
+            document.getElementById('modalInvoice').classList.add('show');
+            document.getElementById('invModalTitle').textContent = 'Invoice Detail - ' + soName;
+            const body = document.getElementById('invModalBody');
+            body.innerHTML = '<div style="text-align:center; padding: 40px;"><div style="font-size:30px; margin-bottom:10px;">↻</div>Loading invoice...</div>';
+
+            safeFetchJson('/api.php?action=get_invoice&id=' + encodeURIComponent(id))
+                .then(resp => {
+                    // Check for HTML error response first
+                    if (resp && resp.errorHtml) {
+                        body.innerHTML = '<div class="alert alert-danger">Server Error (Non-JSON response)</div><div style="max-height:300px;overflow:auto;padding:10px;background:#fff;border:1px solid #ddd;margin-top:5px;">' + resp.errorHtml + '</div>';
+                        return;
+                    }
+
+                    if (resp.success && resp.data) {
+                        const inv = resp.data.invoice;
+                        const lines = resp.data.lines || [];
+
+                        // Handle empty lines with manual debug option
+                        if ((!inv || Object.keys(inv).length === 0) || !Array.isArray(lines) || lines.length === 0) {
+                            let html = `<div class="alert alert-warning">Invoice loaded but no product lines found.</div>`;
+                            html += `<div style="margin-top:10px;"><button id="btnShowDebug" class="btn btn-warning btn-small">Tampilkan data mentah (Debug)</button><span id="debugStatus" style="margin-left:8px;color:#777;"></span></div>`;
+                            html += `<pre id="debugOutput" style="display:none;background:#f8f9fa;padding:10px;margin-top:10px;max-height:300px;overflow:auto;border-radius:4px;border:1px solid #ddd;"></pre>`;
+                            body.innerHTML = html;
+
+                            document.getElementById('btnShowDebug').onclick = function() {
+                                const stat = document.getElementById('debugStatus');
+                                const out = document.getElementById('debugOutput');
+                                stat.textContent = 'Memuat...';
+                                safeFetchJson('/api.php?action=get_invoice&id=' + encodeURIComponent(id) + '&debug=1')
+                                    .then(d => {
+                                        stat.textContent = '';
+                                        out.style.display = 'block';
+                                        out.textContent = JSON.stringify(d, null, 2);
+                                    })
+                                    .catch(e => {
+                                        stat.textContent = 'Gagal';
+                                        out.textContent = e.message;
+                                    });
+                            };
+                            return;
+                        }
+                        
+                        let html = `
+                            <div style="padding: 20px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px;">
+                                <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
+                                    <div><strong>Invoice:</strong> ${inv.name || inv.display_number || 'Draft'}</div>
+                                    <div><strong>Status:</strong> <span class="badge badge-${inv.state}">${inv.state}</span></div>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
+                                    <div><strong>Customer:</strong> ${inv.partner ? (inv.partner.name || (inv.partner_id && inv.partner_id[1])) : 'N/A'} (${inv.party_role === 'supplier' ? 'Supplier' : 'Customer'})</div>
+                                    <div><strong>Date:</strong> ${inv.invoice_date || '-'}</div>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
+                                    <div><strong>Origin:</strong> ${inv.invoice_origin || '-'}</div>
+                                    <div><strong>Order Date:</strong> ${inv.origin_order ? formatDate(inv.origin_order.date_order) : '-'}</div>
+                                </div>
+                            </div>
+                            <table class="table" style="width:100%; border-collapse:collapse;">
+                                <thead style="background: #ecf0f1;">
+                                    <tr>
+                                        <th style="padding:10px; text-align:left;">Product</th>
+                                        <th style="padding:10px; text-align:right;">Qty</th>
+                                        <th style="padding:10px; text-align:right;">Price</th>
+                                        <th style="padding:10px; text-align:right;">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+                        
+                        lines.forEach(l => {
+                            html += `
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding:10px;">${l.product_name || l.name || '-'}${l.product_sku ? ' (' + l.product_sku + ')' : ''}</td>
+                                    <td style="padding:10px; text-align:right;">${parseFloat(l.quantity || 0).toLocaleString()}</td>
+                                    <td style="padding:10px; text-align:right;">Rp ${formatCurrency(l.price_unit)}</td>
+                                    <td style="padding:10px; text-align:right;">Rp ${formatCurrency(l.price_subtotal)}</td>
+                                </tr>
+                            `;
+                        });
+                        
+                        html += `
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" style="padding:15px; text-align:right; font-weight:bold;">Total</td>
+                                        <td style="padding:15px; text-align:right; font-weight:bold; font-size:1.1em;">Rp ${formatCurrency(inv.amount_total)}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        `;
+                        
+                        body.innerHTML = html;
+                    } else {
+                        body.innerHTML = `<div class="alert alert-danger">Gagal memuat invoice: ${resp.error || 'Unknown error'}</div>`;
+                    }
+                })
+                .catch(err => {
+                    body.innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
+                });
+        }
+
+        function closeInvoiceModal() {
+            document.getElementById('modalInvoice').classList.remove('show');
         }
     </script>
 </body>
