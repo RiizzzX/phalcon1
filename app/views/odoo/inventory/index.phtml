@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <!-- DEBUG: Page Rendered at <?= date('Y-m-d H:i:s') ?> -->
     <title><?= $title ?? 'Inventory Management' ?></title>
     <style>
         * { box-sizing: border-box; }
@@ -68,7 +69,7 @@
         <div class="header-left">
             <a href="/odoo/dashboard" class="btn btn-secondary">← Kembali ke Dashboard</a>
         </div>
-        <div class="header-right">            <button onclick="syncFromOdoo()" class="btn btn-secondary" style="margin-right: 10px;">Sync with Odoo</button>            <button onclick="openAddModal()" class="btn btn-primary">+ Tambah Produk</button>
+        <div class="header-right">            <button onclick="syncFromOdoo(this)" class="btn btn-secondary" style="margin-right: 10px;">Sync with Odoo</button>            <button onclick="openAddModal()" class="btn btn-primary">+ Tambah Produk</button>
         </div>
     </div>
 
@@ -159,9 +160,8 @@
         $perms = $stat ? substr(sprintf('%o', $stat['mode']), -4) : 'n/a';
         echo "<pre style=\"background:#fff8c5;padding:10px;border-radius:6px;border:1px solid #f0e6b8;color:#333;\">Inventory include debug:\n  path: $customerPartial\n  exists: $exists\n  readable: $read\n  perms: $perms\n  web_remote: " . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . "\n</pre>";
     }
-    </div>
+?>
 
-<!-- Modal: Add Product -->
 <div id="addModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -509,10 +509,10 @@ function deleteProduct(id) {
     }
 }
 
-function syncFromOdoo() {
+function syncFromOdoo(btn) {
     if(!confirm('This will synchronize local products with Odoo. Continue?')) return;
     
-    const btn = event.target;
+    if (!btn) return;
     const originalText = btn.innerText;
     btn.innerText = 'Syncing...';
     btn.disabled = true;
