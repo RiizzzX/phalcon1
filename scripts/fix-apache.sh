@@ -52,9 +52,10 @@ Listen 8076
     CustomLog ">\\${APACHE_LOG_DIR}/ilmu_pkl_access.log" combined
 
     <Directory $DOCROOT>
-        Options Indexes FollowSymLinks
+        Options -Indexes +FollowSymLinks
         AllowOverride All
         Require all granted
+        DirectoryIndex index.php index.html
     </Directory>
 </VirtualHost>
 EOF
@@ -66,6 +67,7 @@ if ! grep -q "^Listen 8076$" /etc/apache2/ports.conf; then
 fi
 
 # Enable site and reload
+a2enmod rewrite headers || true
 a2ensite "$VHOST_NAME" || true
 
 # Test config and reload apache
