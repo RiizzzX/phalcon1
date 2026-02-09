@@ -61,9 +61,11 @@ try {
     include APP_PATH . '/config/services.php';
 
     /**
-     * Handle routes
+     * Handle routes with custom DI registration
      */
-    include APP_PATH . '/config/router.php';
+    $di->setShared('router', function () {
+        return include APP_PATH . '/config/router.php';
+    });
 
     /**
      * Get config service for use in inline setup below

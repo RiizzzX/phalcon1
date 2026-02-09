@@ -12,6 +12,10 @@ class OdooInvoicingController extends OdooControllerBase
     public function indexAction()
     {
         try {
+            if (!$this->odoo) {
+                throw new \Exception("Odoo connection not available. Check your configuration.");
+            }
+
             // Optional partner filter via query param
             $partnerId = (int)$this->request->getQuery('partner_id');
 
@@ -28,10 +32,10 @@ class OdooInvoicingController extends OdooControllerBase
             try {
                 $invoices = $this->odoo->executePublic('account.move', 'search_read',
                     [$domain],
-                    ['fields' => ['name', 'partner_id', 'invoice_date', 'amount_total', 'state', 'move_type'], 'limit' => 250]
+                    ['fields' => ['id', 'name', 'partner_id', 'invoice_date', 'amount_total', 'state', 'move_type'], 'limit' => 250]
                 );
                 $fetchDebug[] = ['step' => 'primary', 'success' => true, 'count' => is_array($invoices) ? count($invoices) : 0];
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $fetchDebug[] = ['step' => 'primary', 'success' => false, 'error' => $e->getMessage()];
                 error_log('Warning: invoice primary domain fetch failed: ' . $e->getMessage());
                 $invoices = [];
@@ -44,7 +48,7 @@ class OdooInvoicingController extends OdooControllerBase
                     if ($partnerId) $domain2[] = ['partner_id', '=', $partnerId];
                     $invoices = $this->odoo->executePublic('account.move', 'search_read',
                         [$domain2],
-                        ['fields' => ['name', 'partner_id', 'invoice_date', 'amount_total', 'state', 'move_type'], 'limit' => 250]
+                        ['fields' => ['id', 'name', 'partner_id', 'invoice_date', 'amount_total', 'state', 'move_type'], 'limit' => 250]
                     );
                     if (!empty($invoices)) {
                         $fetchDebug[] = ['step' => 'fallback1', 'success' => true, 'count' => count($invoices)];
@@ -52,7 +56,7 @@ class OdooInvoicingController extends OdooControllerBase
                     } else {
                         $fetchDebug[] = ['step' => 'fallback1', 'success' => true, 'count' => 0];
                     }
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     error_log('Warning: invoice fallback domain fetch failed: ' . $e->getMessage());
                     $invoices = [];
                 }
@@ -69,7 +73,8 @@ class OdooInvoicingController extends OdooControllerBase
                     if (is_array($all)) {
                         foreach ($all as $m) {
                             $mt = $m['move_type'] ?? '';
-                            if ($mt && (str_contains($mt, 'invoice') || str_contains($mt, 'refund'))) {
+                            // Using strpos for compatibility with PHP < 8.0
+                            if ($mt && (strpos((string)$mt, 'invoice') !== false || strpos((string)$mt, 'refund') !== false)) {
                                 if ($partnerId) {
                                     $pid = is_array($m['partner_id']) ? (int)$m['partner_id'][0] : (int)$m['partner_id'];
                                     if ($pid !== $partnerId) continue;
@@ -85,7 +90,7 @@ class OdooInvoicingController extends OdooControllerBase
                     } else {
                         $fetchDebug[] = ['step' => 'fallback2', 'success' => true, 'count' => 0];
                     }
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     error_log('Warning: invoice final fallback fetch failed: ' . $e->getMessage());
                     $invoices = [];
                 }
@@ -96,10 +101,11 @@ class OdooInvoicingController extends OdooControllerBase
             $this->view->invoice_debug = $fetchDebug ?? [];
             $this->view->title = "Invoices";
             $this->view->filter_partner = $partnerId ?: null;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->flash->error("Error: " . $e->getMessage());
             $this->view->invoices = [];
             $this->view->title = "Invoices";
+            $this->view->invoice_debug = [['step' => 'global', 'success' => false, 'error' => $e->getMessage()]];
         }
     }
     
@@ -108,6 +114,11 @@ class OdooInvoicingController extends OdooControllerBase
      */
     public function createAction()
     {
+        if (!$this->odoo) {
+            $this->flash->error("Odoo connection not available.");
+            return $this->response->redirect('odoo-invoicing');
+        }
+
         if ($this->request->isPost()) {
             try {
                 $partnerId = (int)$this->request->getPost('partner_id');
@@ -148,7 +159,7 @@ class OdooInvoicingController extends OdooControllerBase
                     try {
                         $this->odoo->executePublic('account.move', 'action_post', [[$invoiceId]]);
                         $posted = true;
-                    } catch (\Exception $e) {
+                    } catch (\Throwable $e) {
                         // posting failed, but invoice exists in draft
                         $this->flash->warning("Invoice dibuat (ID: $invoiceId) tetapi gagal dipost: " . $e->getMessage());
                         return $this->response->redirect('odoo-invoicing');
@@ -160,7 +171,7 @@ class OdooInvoicingController extends OdooControllerBase
                     $this->flash->success($msg);
                     return $this->response->redirect('odoo-invoicing');
                 }
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $this->flash->error("Error: " . $e->getMessage());
             }
         }
@@ -172,7 +183,7 @@ class OdooInvoicingController extends OdooControllerBase
                 ['fields' => ['name', 'email', 'phone']] // kwargs
             );
             $this->view->customers = $customers ?: [];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->view->customers = [];
         }
         
@@ -183,7 +194,7 @@ class OdooInvoicingController extends OdooControllerBase
                 ['fields' => ['name', 'default_code', 'list_price', 'type']] // kwargs
             );
             $this->view->products = $products ?: [];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->view->products = [];
         }
         
@@ -198,11 +209,16 @@ class OdooInvoicingController extends OdooControllerBase
         if (!$id) {
             $id = $this->dispatcher->getParam('id');
         }
+
+        if (!$this->odoo) {
+            $this->flash->error("Odoo connection not available.");
+            return $this->response->redirect('odoo-invoicing');
+        }
         
         try {
             // 1. Fetch Invoice Header and Line IDs
             $invoice = $this->odoo->executePublic('account.move', 'read', [
-                [$id],
+                [(int)$id],
                 ['name', 'partner_id', 'invoice_date', 'invoice_date_due', 'amount_total', 'state', 'invoice_line_ids', 'move_type']
             ]);
             
@@ -227,7 +243,7 @@ class OdooInvoicingController extends OdooControllerBase
                 $this->flash->error("Invoice not found");
                 return $this->response->redirect('odoo-invoicing');
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->flash->error("Error loading invoice: " . $e->getMessage());
             return $this->response->redirect('odoo-invoicing');
         }

@@ -49,7 +49,8 @@ RUN composer install --no-dev --prefer-dist --no-interaction 2>&1 || echo "Compo
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf && \
 	sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf && \
-	printf '<Directory ${APACHE_DOCUMENT_ROOT}>\n\tAllowOverride All\n\tRequire all granted\n</Directory>\n' >> /etc/apache2/apache2.conf && \
+	# Force AllowOverride All globally to ensure .htaccess works
+	sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf && \
 	a2enmod rewrite && \
 	chown -R www-data /var/www/html
 

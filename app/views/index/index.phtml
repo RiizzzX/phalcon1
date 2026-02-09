@@ -21,7 +21,7 @@
             <p>Sistem manajemen inventaris sederhana yang membantu Anda mengelola dan melacak barang-barang Anda dengan mudah dan efisien.</p>
             <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
                 <a href="<?= $this->url->get('index/list') ?>" class="btn">Mulai Menggunakan</a>
-                <a href="<?= $this->url->get('odoo-dashboard') ?>" class="btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <a href="<?= $this->url->get(['for' => 'odoo_dashboard']) ?>" class="btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                     🎯 Odoo Dashboard
                 </a>
             </div>

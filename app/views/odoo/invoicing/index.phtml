@@ -230,6 +230,16 @@ $title = $title ?? 'Invoices'; ?>
 </style>
 
 <div class="container">
+    <?php if (!empty($odooError)): ?>
+        <div style="background-color: #fee2e2; border: 1px solid #ef4444; color: #b91c1c; padding: 16px; border-radius: 8px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 24px;">⚠️</span>
+            <div>
+                <div style="font-weight: 700;">Connection Error</div>
+                <div style="font-size: 14px;"><?= htmlspecialchars($odooError) ?></div>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <div class="page-header">
         <div>
             <h1 class="page-title">
