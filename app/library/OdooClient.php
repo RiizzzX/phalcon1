@@ -31,9 +31,10 @@ class OdooClient
         }
 
         $this->url = $envUrl ?: 'http://odoo:8069';
-        $this->db = trim(getenv('ODOO_DB') ?: 'new-odoo');
-        $this->username = trim(getenv('ODOO_USERNAME') ?: 'admin@gmail.com');
-        $this->password = trim(getenv('ODOO_PASSWORD') ?: 'admin');
+        // Strip spaces AND quotes that might come from .env or docker-compose environment vars
+        $this->db = trim(trim(getenv('ODOO_DB') ?: 'new-odoo'), " \"'");
+        $this->username = trim(trim(getenv('ODOO_USERNAME') ?: 'admin'), " \"'");
+        $this->password = trim(trim(getenv('ODOO_PASSWORD') ?: 'admin'), " \"'");
     }
 
     /**
@@ -248,7 +249,23 @@ class OdooClient
         ]);
 
         if (!$result) {
-            throw new \Exception("Odoo authentication failed for user '{$this->username}' on database '{$this->db}'. Please check your credentials.");
+            // Smart Fallback: Try swapping 'admin' and 'admin@gmail.com'
+            $fallbackUser = ($this->username === 'admin') ? 'admin@gmail.com' : 'admin';
+            $result = $this->xmlRpcCall('/xmlrpc/2/common', 'authenticate', [
+                $this->db,
+                $fallbackUser,
+                $this->password,
+                []
+            ]);
+
+            if ($result) {
+                error_log("OdooClient: Auth succeeded with fallback user '{$fallbackUser}'");
+                $this->username = $fallbackUser;
+                $this->uid = $result;
+                return $this->uid;
+            }
+
+            throw new \Exception("Odoo authentication failed for user '{$this->username}' on database '{$this->db}'. Please check if Odoo is initialized and credentials are correct.");
         }
 
         $this->uid = $result;
