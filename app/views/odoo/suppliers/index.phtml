@@ -15,6 +15,7 @@
     </div>
 
     <div style="margin-bottom:12px; display:flex; gap:8px; align-items:center;">
+        <button id="btnBulkDelete" class="btn btn-danger" style="display: none; padding: 10px 15px; border-radius: 6px; font-weight: bold;">🗑️ Hapus Terpilih (0)</button>
         <input id="searchSuppliers" placeholder="Cari name/email" style="flex:1; padding:10px; border-radius:6px; border:1px solid #ddd;">
         <button id="btnSearchSup" class="btn btn-primary">Cari</button>
         <button id="btnRefreshSup" class="btn btn-primary">🔄 Refresh</button>
@@ -27,6 +28,7 @@
         <table style="width:100%; border-collapse:collapse;">
             <thead>
                 <tr style="background:#f5f7fa; text-align:left;">
+                    <th style="padding:10px; width:40px;"><input type="checkbox" id="selectAll"></th>
                     <th style="padding:10px;">ID</th>
                     <th style="padding:10px;">Nama</th>
                     <th style="padding:10px;">Email</th>
@@ -41,17 +43,115 @@
 
 <script>
 const API = '/api.php';
-function showSupAlert(msg,type='info'){ const c=document.getElementById('supAlert'); c.innerHTML=`<div class="alert alert-${type} show">${msg}</div>`; setTimeout(()=>c.innerHTML='',3000); }
-function loadSuppliers(q=''){
-    fetch(`${API}?action=list_suppliers`).then(r=>r.json()).then(data=>{
-        const tbody=document.getElementById('suppliersBody'); tbody.innerHTML=''; if(!data||!data.success) return showSupAlert('Gagal memuat suppliers','danger');
-        let arr=data.data; if(q){ q=q.toLowerCase(); arr=arr.filter(s=> (s.name||'').toLowerCase().includes(q) || (s.email||'').toLowerCase().includes(q)); }
-        arr.forEach(s=>{
-            const tr=document.createElement('tr'); tr.innerHTML=`<td style="padding:10px">${s.id}</td><td style="padding:10px">${s.name||'-'}</td><td style="padding:10px">${s.email||'-'}</td><td style="padding:10px">${s.phone||'-'}</td><td style="padding:10px; text-align:center"><button class="btn btn-danger btn-small" data-id="${s.id}">Hapus</button></td>`;
-            tbody.appendChild(tr);
-            tr.querySelector('button').addEventListener('click', function(){ const id=this.dataset.id; if(!confirm('Hapus supplier '+(s.name||id)+'?')) return; fetch('/api.php?action=delete_supplier',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id})}).then(r=>r.json()).then(resp=>{ if(resp && resp.success){ showSupAlert(resp.message||'Dihapus','success'); loadSuppliers(q);} else { showSupAlert('Gagal: '+(resp.error||'Unknown'),'danger'); } }).catch(err=>showSupAlert('Error: '+err.message,'danger')); });
-        });
-    }).catch(err=>showSupAlert('Error: '+err.message,'danger'));
+function showSupAlert(msg, type = 'info') {
+    const c = document.getElementById('supAlert');
+    c.innerHTML = `<div class="alert alert-${type} show">${msg}</div>`;
+    setTimeout(() => c.innerHTML = '', 3000);
 }
+
+function updateBulkBtn() {
+    const checked = document.querySelectorAll('.sup-checkbox:checked');
+    const btn = document.getElementById('btnBulkDelete');
+    const selectAll = document.getElementById('selectAll');
+    const all = document.querySelectorAll('.sup-checkbox');
+
+    if (btn) {
+        if (checked.length > 0) {
+            btn.style.display = 'inline-block';
+            btn.innerText = `🗑️ Hapus Terpilih (${checked.length})`;
+        } else {
+            btn.style.display = 'none';
+        }
+    }
+    if (selectAll && all.length > 0) {
+        selectAll.checked = (checked.length === all.length);
+    }
+}
+
+async function handleBulkDelete() {
+    const checked = document.querySelectorAll('.sup-checkbox:checked');
+    const ids = Array.from(checked).map(cb => cb.value);
+    if (!ids.length) return;
+
+    if (!confirm(`Hapus ${ids.length} supplier yang dipilih?`)) return;
+
+    let success = 0;
+    showSupAlert(`Sedang menghapus ${ids.length} data...`, 'info');
+
+    for (const id of ids) {
+        try {
+            const resp = await fetch('/api.php?action=delete_customer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id })
+            }).then(r => r.json());
+            if (resp && resp.success) success++;
+        } catch (e) { console.error(e); }
+    }
+
+    showSupAlert(`Selesai. ${success} berhasil dihapus.`, 'success');
+    loadSuppliers();
+    if (document.getElementById('btnBulkDelete')) document.getElementById('btnBulkDelete').style.display = 'none';
+    if (document.getElementById('selectAll')) document.getElementById('selectAll').checked = false;
+}
+
+function loadSuppliers(q = '') {
+    fetch(`${API}?action=list_suppliers`).then(r => r.json()).then(data => {
+        const tbody = document.getElementById('suppliersBody');
+        tbody.innerHTML = '';
+        if (!data || !data.success) return showSupAlert('Gagal memuat suppliers', 'danger');
+        let arr = data.data;
+        if (q) {
+            q = q.toLowerCase();
+            arr = arr.filter(s => (s.name || '').toLowerCase().includes(q) || (s.email || '').toLowerCase().includes(q));
+        }
+        arr.forEach(s => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="padding:10px"><input type="checkbox" class="sup-checkbox" value="${s.id}"></td>
+                <td style="padding:10px">${s.id}</td>
+                <td style="padding:10px">${s.name || '-'}</td>
+                <td style="padding:10px">${s.email || '-'}</td>
+                <td style="padding:10px">${s.phone || '-'}</td>
+                <td style="padding:10px; text-align:center"><button class="btn btn-danger btn-small" data-id="${s.id}">Hapus</button></td>
+            `;
+            tbody.appendChild(tr);
+
+            tr.querySelector('.sup-checkbox').onchange = updateBulkBtn;
+
+            tr.querySelector('button').onclick = function() {
+                const id = this.dataset.id;
+                if (!confirm('Hapus supplier: ' + (s.name || id) + '?')) return;
+                fetch(`${API}?action=delete_customer`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id })
+                }).then(r => r.json()).then(resp => {
+                    if (resp && resp.success) {
+                        showSupAlert('Berhasil', 'success');
+                        loadSuppliers(q);
+                    } else showSupAlert('Gagal', 'danger');
+                }).catch(e => showSupAlert('Error', 'danger'));
+            };
+        });
+    }).catch(err => showSupAlert('Error: ' + err.message, 'danger'));
+}
+
+window.onload = function() {
+    loadSuppliers();
+    document.getElementById('btnRefreshSup').onclick = () => loadSuppliers();
+    document.getElementById('btnSearchSup').onclick = () => loadSuppliers(document.getElementById('searchSuppliers').value);
+
+    const selectAll = document.getElementById('selectAll');
+    if (selectAll) {
+        selectAll.onchange = function() {
+            document.querySelectorAll('.sup-checkbox').forEach(cb => cb.checked = this.checked);
+            updateBulkBtn();
+        };
+    }
+
+    const bulkBtn = document.getElementById('btnBulkDelete');
+    if (bulkBtn) bulkBtn.onclick = handleBulkDelete;
+};
 window.addEventListener('DOMContentLoaded', function(){ loadSuppliers(); document.getElementById('btnRefreshSup').addEventListener('click', ()=>loadSuppliers()); document.getElementById('btnSearchSup').addEventListener('click', ()=>loadSuppliers(document.getElementById('searchSuppliers').value)); });
 </script>

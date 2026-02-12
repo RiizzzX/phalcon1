@@ -398,7 +398,23 @@ $title = $title ?? 'Invoices'; ?>
 </div>
 
 <script>
-// Kept script logic mostly same, with minor UI tweaks
+(function() {
+    // Helper for fetch with text recovery
+    async function safeFetchJson(url, opts = {}) {
+        try {
+            const r = await fetch(url, opts);
+            const text = await r.text();
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.warn('safeFetchJson: parse error', text);
+                return { success: false, error: 'Invalid JSON response', detail: text };
+            }
+        } catch (e) {
+            console.error('safeFetchJson: network error', e);
+            return { success: false, error: 'Network error or unreachable' };
+        }
+    }
 
     function updateBulkBtnInv() {
         const checked = document.querySelectorAll('.inv-checkbox:checked');
@@ -456,12 +472,72 @@ $title = $title ?? 'Invoices'; ?>
                 }
             };
         }
+
+        // Delegated handlers for main table actions
+        const tableContainer = document.querySelector('.table-container');
+        if (tableContainer) {
+            tableContainer.addEventListener('click', async function(e) {
+                // View button
+                const viewBtn = e.target.closest('.btn-view-invoice');
+                if (viewBtn) {
+                    e.preventDefault();
+                    const id = viewBtn.dataset.id;
+                    const soId = viewBtn.dataset.soid;
+                    if (id) {
+                        loadInvoiceToModal(id);
+                    } else if (soId) {
+                        // Fallback functionality for PO-linked viewing
+                        safeFetchJson(`/api.php?action=find_invoice_by_order&type=purchase&id=${encodeURIComponent(soId)}`)
+                            .then(resp => {
+                                if (resp && resp.success && Array.isArray(resp.data) && resp.data.length > 0) {
+                                    loadInvoiceToModal(resp.data[0].id || resp.data[0]);
+                                } else {
+                                    alert('Invoice tidak ditemukan untuk PO ini.');
+                                }
+                            });
+                    }
+                    return;
+                }
+
+                // Delete button
+                const delBtn = e.target.closest('.btn-delete-invoice');
+                if (delBtn) {
+                    e.preventDefault();
+                    const id = delBtn.dataset.id;
+                    if (!id) return;
+                    if (!confirm('Hapus invoice ' + id + ' ?')) return;
+
+                    delBtn.disabled = true;
+                    try {
+                        const res = await safeFetchJson('/api.php?action=delete_invoice', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: id })
+                        });
+
+                        if (res && res.success) {
+                            alert('Invoice dihapus');
+                            const row = delBtn.closest('tr');
+                            if (row) row.remove();
+                        } else {
+                            alert('Gagal: ' + (res.error || 'Unknown error'));
+                        }
+                    } finally {
+                        delBtn.disabled = false;
+                    }
+                    return;
+                }
+            });
+        }
     });
 
     function showModal(){ document.getElementById('invoicePopupModal').classList.add('show'); }
     function hideModal(){ document.getElementById('invoicePopupModal').classList.remove('show'); }
 
-    document.getElementById('invPopupClose').addEventListener('click', hideModal);
+    // Use querySelector/if to avoid errors if element not present
+    const closeBtn = document.getElementById('invPopupClose');
+    if (closeBtn) closeBtn.addEventListener('click', hideModal);
+
 
     function renderInvoice(inv, lines){
         let html = `<div style="display:flex; justify-content:space-between; align-items:center;">
@@ -604,97 +680,31 @@ $title = $title ?? 'Invoices'; ?>
 
                     if (!id) { alert('Invoice ID invalid'); return; }
 
-                    const resp = await fetch('/api.php?action=delete_invoice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id})});
-                    let res;
-                    try { res = await resp.json(); } catch (parseErr) { const txt = await resp.text(); console.error('Failed to parse delete response:', parseErr, txt); alert('Server returned invalid response saat menghapus (lihat console)'); return; }
+                    const res = await safeFetchJson('/api.php?action=delete_invoice', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: id })
+                    });
 
                     if (res && res.success) {
-                        alert('Invoice dihapus'); hideModal(); location.reload();
+                        alert('Invoice dihapus'); 
+                        hideModal(); 
+                        location.reload();
                     } else {
                         console.error('Delete invoice failed:', res);
-                        alert('Gagal menghapus: '+(res && (res.error||res.message) ? (res.error||res.message) : 'Unknown'));
+                        alert('Gagal menghapus: ' + (res.error || 'Unknown'));
                     }
                 } catch (err) {
                     console.error('Error deleting invoice:', err);
-                    alert('Error saat menghapus invoice: '+(err && err.message ? err.message : err));
+                    alert('Error saat menghapus invoice: ' + err.message);
                 } finally {
-                    try { this.disabled = false; } catch (e) {}
+                    try { btn.disabled = false; } catch (e) {}
                 }
             };
 
+
         }).catch(err=>{ document.getElementById('invPopupBody').innerText = 'Error: ' + err.message; });
     }
-
-    // Attach row handlers
-    document.querySelectorAll('.btn-view-invoice').forEach(btn=>btn.addEventListener('click', function(e){ 
-        const id = this.dataset.id; 
-        const soId = this.dataset.soid || null;
-        const name = this.dataset.name || null;
-        if (id) {
-            loadInvoiceToModal(id);
-        } else if (soId) {
-            safeFetchJson(`/api.php?action=find_invoice_by_order&type=purchase&id=${encodeURIComponent(soId)}`)
-                .then(resp => {
-                    if (resp && resp.success && Array.isArray(resp.data) && resp.data.length > 0) {
-                        const foundId = resp.data[0].id || resp.data[0];
-                        loadInvoiceToModal(foundId);
-                    } else {
-                        if (confirm('Invoice tidak ditemukan untuk PO ini. Buat invoice dari PO sekarang?')) {
-                            safeFetchJson(`/api.php?action=create_invoice_from_order&type=purchase&id=${encodeURIComponent(soId)}&post_now=1`)
-                                .then(r => {
-                                    if (r && r.success && r.invoice_id) {
-                                        alert('Invoice dibuat (ID: ' + r.invoice_id + ')');
-                                        loadInvoiceToModal(r.invoice_id);
-                                        window.location.reload();
-                                    } else {
-                                        alert('Gagal membuat invoice: ' + (r.error || 'Unknown'));
-                                    }
-                                })
-                                .catch(e => alert('Error: ' + e.message));
-                        }
-                    }
-                }).catch(e => alert('Error: ' + e.message));
-        } else {
-            alert('Invoice ID tidak tersedia');
-        }
-    }));
-    // Delegated handler for delete buttons — more robust and better error handling
-    document.querySelector('.table-container').addEventListener('click', async function(e) {
-        const btn = e.target.closest('.btn-delete-invoice');
-        if (!btn) return;
-        e.preventDefault();
-
-        const id = btn.dataset.id;
-        if (!id) { alert('Invoice ID invalid'); return; }
-        if (!confirm('Hapus invoice ' + id + ' ?')) return;
-
-        btn.disabled = true;
-        try {
-            const resp = await fetch('/api.php?action=delete_invoice', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({ id: id })
-            });
-
-            const text = await resp.text();
-            let res;
-            try { res = JSON.parse(text); } catch (parseErr) { console.error('Failed to parse delete response:', parseErr, text); alert('Server returned invalid response saat menghapus (lihat console)'); return; }
-
-            if (res && res.success) {
-                alert('Invoice dihapus');
-                // Remove row from table for immediate feedback
-                const row = btn.closest('tr'); if (row) row.remove();
-            } else {
-                console.error('Delete invoice failed:', res);
-                alert('Gagal: ' + (res && (res.error || res.message) ? (res.error || res.message) : 'Unknown'));
-            }
-        } catch (err) {
-            console.error('Error deleting invoice:', err);
-            alert('Error saat menghapus invoice: ' + (err && err.message ? err.message : err));
-        } finally {
-            try { btn.disabled = false; } catch (e) {}
-        }
-    });
 
 })();
 </script>

@@ -333,6 +333,7 @@
 
         <!-- Action Bar -->
         <div class="action-bar">
+            <button class="btn btn-danger" id="btnBulkDelete" style="display: none; background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">🗑️ Hapus Terpilih (0)</button>
             <button class="btn btn-success" id="btnNewPO">➕ Buat Purchase Order Baru</button>
             <button class="btn btn-success" id="btnAddSupplier">➕ Tambah Supplier</button>
             <button class="btn btn-primary" id="btnRefresh">🔄 Refresh</button>
@@ -350,6 +351,7 @@
             <table id="poTable">
                 <thead>
                     <tr>
+                        <th style="width: 40px; text-align: center;"><input type="checkbox" id="selectAll"></th>
                         <th>No. PO</th>
                         <th>Supplier</th>
                         <th>Tanggal</th>
@@ -526,6 +528,8 @@
         // Event Listeners
         function setupEventListeners() {
             document.getElementById('btnNewPO').addEventListener('click', openNewPOModal);
+            const bulkBtn = document.getElementById('btnBulkDelete');
+            if (bulkBtn) bulkBtn.addEventListener('click', handleBulkDelete);
             const addSupplierBtn = document.getElementById('btnAddSupplier');
             if (addSupplierBtn) addSupplierBtn.addEventListener('click', function() { if (typeof showSupplierModal === 'function') showSupplierModal(); else document.querySelector('[data-open-supplier]')?.click(); });
             document.getElementById('btnRefresh').addEventListener('click', loadPurchaseOrders);
@@ -680,6 +684,7 @@
                 `;
 
                 row.innerHTML = `
+                    <td style="text-align: center;"><input type="checkbox" class="po-checkbox" value="${order.id}"></td>
                     <td><strong>${order.name}</strong></td>
                     <td>${order.supplier_name || 'N/A'}</td>
                     <td>${formatDate(order.date_order)}</td>
@@ -692,6 +697,22 @@
 
             tableContainer.style.display = 'block';
             emptyState.style.display = 'none';
+
+            // Setup select all logic
+            const selectAll = document.getElementById('selectAll');
+            if (selectAll) {
+                selectAll.checked = false;
+                selectAll.onchange = function() {
+                    const checkboxes = document.querySelectorAll('.po-checkbox');
+                    checkboxes.forEach(cb => cb.checked = this.checked);
+                    updateBulkBtn();
+                };
+            }
+
+            // Setup individual checkbox listeners
+            document.querySelectorAll('.po-checkbox').forEach(cb => {
+                cb.onchange = updateBulkBtn;
+            });
         }
 
         // Get Action Buttons based on State
@@ -1315,6 +1336,54 @@
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 2
             });
+        }
+
+        function updateBulkBtn() {
+            const checked = document.querySelectorAll('.po-checkbox:checked');
+            const btn = document.getElementById('btnBulkDelete');
+            if (btn) {
+                if (checked.length > 0) {
+                    btn.style.display = 'inline-block';
+                    btn.innerText = `🗑️ Hapus Terpilih (${checked.length})`;
+                } else {
+                    btn.style.display = 'none';
+                }
+            }
+        }
+
+        async function handleBulkDelete() {
+            const checked = document.querySelectorAll('.po-checkbox:checked');
+            const ids = Array.from(checked).map(cb => cb.value);
+            if (ids.length === 0) return;
+
+            if (confirm(`Yakin ingin menghapus ${ids.length} Purchase Order yang dipilih?`)) {
+                let successCount = 0;
+                let failCount = 0;
+                
+                // Show global processing message
+                showAlert(`Menghapus ${ids.length} PO...`, 'info');
+
+                for (const id of ids) {
+                    try {
+                        const res = await safeFetchJson(`${API_URL}?action=delete_purchase_order`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: id })
+                        });
+                        if (res && res.success) successCount++;
+                        else {
+                            console.error('Bulk delete fail for ID ' + id, res);
+                            failCount++;
+                        }
+                    } catch (e) {
+                        console.error('Network/Server error for ID ' + id, e);
+                        failCount++;
+                    }
+                }
+
+                showAlert(`Berhasil: ${successCount}. Gagal: ${failCount}.`, successCount > 0 ? 'success' : 'danger');
+                loadPurchaseOrders();
+            }
         }
     </script>
 </body>

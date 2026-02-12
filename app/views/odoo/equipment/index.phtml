@@ -70,6 +70,7 @@
         <?php endif; ?>
         
         <div style="margin: 20px 0;">
+            <button id="btnBulkDelete" class="btn btn-secondary" style="display: none; background: #e74c3c; color: white; border: none; font-weight: 600;">🗑️ Hapus Terpilih (0)</button>
             <a href="/odoo-equipment/create" class="btn btn-success" style="font-weight: 600;">➕ Create Equipment</a>
             <a href="/odoo-equipment/rentals" class="btn btn-primary">📋 Rental Transactions</a>
             <a href="/odoo-equipment/logs" class="btn btn-primary">💾 MySQL Logs</a>
@@ -80,6 +81,7 @@
             <table>
                 <thead>
                     <tr>
+                        <th style="width: 40px; background: #667eea;"><input type="checkbox" id="selectAll"></th>
                         <th>ID</th>
                         <th>Code</th>
                         <th>Name</th>
@@ -93,6 +95,7 @@
                 <tbody>
                     <?php foreach ($equipments as $equipment): ?>
                         <tr>
+                            <td><input type="checkbox" class="eq-checkbox" value="<?= $equipment['id'] ?>"></td>
                             <td><?= $equipment['id'] ?></td>
                             <td><strong><?= htmlspecialchars($equipment['code']) ?></strong></td>
                             <td><?= htmlspecialchars($equipment['name']) ?></td>
@@ -155,5 +158,68 @@
             <a href="/odoo-dashboard" class="btn btn-secondary">← Kembali ke Dashboard</a>
         </div>
     </div>
+
+    <script>
+        function updateBulkBtn() {
+            const checked = document.querySelectorAll('.eq-checkbox:checked');
+            const btn = document.getElementById('btnBulkDelete');
+            const selectAll = document.getElementById('selectAll');
+            const all = document.querySelectorAll('.eq-checkbox');
+
+            if (btn) {
+                if (checked.length > 0) {
+                    btn.style.display = 'inline-block';
+                    btn.innerText = `🗑️ Hapus Terpilih (${checked.length})`;
+                } else {
+                    btn.style.display = 'none';
+                }
+            }
+            if (selectAll && all.length > 0) {
+                selectAll.checked = checked.length === all.length;
+            }
+        }
+
+        async function handleBulkDelete() {
+            const checked = document.querySelectorAll('.eq-checkbox:checked');
+            const ids = Array.from(checked).map(cb => cb.value);
+            if (!ids.length) return;
+
+            if (!confirm(`Yakin ingin menghapus ${ids.length} equipment terpilih?`)) return;
+
+            const btn = document.getElementById('btnBulkDelete');
+            btn.disabled = true;
+            btn.innerText = 'Menghapus...';
+
+            let success = 0;
+            for (const id of ids) {
+                try {
+                    // Equipment delete uses a POST request to /odoo-equipment/delete/{id}
+                    const resp = await fetch(`/odoo-equipment/delete/${id}`, { method: 'POST' });
+                    // Note: Since the controller might redirect, we check if it was ok
+                    if (resp.ok) success++;
+                } catch (e) { console.error('Error deleting ID ' + id, e); }
+            }
+
+            alert(`Selesai. ${success} equipment berhasil diproses.`);
+            window.location.reload();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectAll = document.getElementById('selectAll');
+            if (selectAll) {
+                selectAll.addEventListener('change', function() {
+                    document.querySelectorAll('.eq-checkbox').forEach(cb => cb.checked = this.checked);
+                    updateBulkBtn();
+                });
+            }
+
+            document.querySelectorAll('.eq-checkbox').forEach(cb => {
+                cb.addEventListener('change', updateBulkBtn);
+            });
+
+            const bulkBtn = document.getElementById('btnBulkDelete');
+            if (bulkBtn) bulkBtn.addEventListener('click', handleBulkDelete);
+        });
+    </script>
 </body>
 </html>

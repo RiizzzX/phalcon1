@@ -21,6 +21,7 @@
     </div>
 
     <div style="margin-bottom: 12px; display:flex; gap:8px; align-items:center;">
+        <button id="btnBulkDelete" class="btn btn-danger" style="display: none; padding: 10px 15px; border-radius: 6px; font-weight: bold;">🗑️ Hapus Terpilih (0)</button>
         <input id="searchCustomers" placeholder="Cari name/email/phone" style="flex:1; padding:10px; border-radius:6px; border:1px solid #ddd;">
         <button id="btnSearch" class="btn btn-primary">Cari</button>
         <button id="btnRefresh" class="btn btn-primary">🔄 Refresh</button>
@@ -33,6 +34,7 @@
         <table style="width:100%; border-collapse:collapse;">
             <thead>
                 <tr style="background:#f5f7fa; text-align:left;">
+                    <th style="padding:10px; width:40px;"><input type="checkbox" id="selectAll"></th>
                     <th style="padding:10px;">ID</th>
                     <th style="padding:10px;">Nama</th>
                     <th style="padding:10px;">Email</th>
@@ -69,6 +71,7 @@ function loadCustomersTable(q=''){
             arr.forEach(c => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
+                    <td style="padding:10px;"><input type="checkbox" class="cust-checkbox" value="${c.id}"></td>
                     <td style="padding:10px;">${c.id}</td>
                     <td style="padding:10px;">${c.name||'-'}</td>
                     <td style="padding:10px;">${c.email||'-'}</td>
@@ -77,6 +80,9 @@ function loadCustomersTable(q=''){
                     <td style="padding:10px; text-align:center;"><button class="btn btn-danger btn-small" data-id="${c.id}">Hapus</button></td>
                 `;
                 tbody.appendChild(tr);
+
+                tr.querySelector('.cust-checkbox').addEventListener('change', updateBulkBtn);
+
                 tr.querySelector('button').addEventListener('click', function(){
                     const id = this.dataset.id;
                     if (!confirm('Hapus customer: ' + (c.name||id) + '?')) return;
@@ -90,9 +96,66 @@ function loadCustomersTable(q=''){
         .catch(err=> showCustAlert('Error: ' + err.message,'danger'));
 }
 
+function updateBulkBtn() {
+    const checked = document.querySelectorAll('.cust-checkbox:checked');
+    const btn = document.getElementById('btnBulkDelete');
+    const selectAll = document.getElementById('selectAll');
+    const all = document.querySelectorAll('.cust-checkbox');
+
+    if (btn) {
+        if (checked.length > 0) {
+            btn.style.display = 'inline-block';
+            btn.innerText = `🗑️ Hapus Terpilih (${checked.length})`;
+        } else {
+            btn.style.display = 'none';
+        }
+    }
+    if (selectAll && all.length > 0) {
+        selectAll.checked = (checked.length === all.length);
+    }
+}
+
+async function handleBulkDelete() {
+    const checked = document.querySelectorAll('.cust-checkbox:checked');
+    const ids = Array.from(checked).map(cb => cb.value);
+    if (!ids.length) return;
+
+    if (!confirm(`Hapus ${ids.length} customer yang dipilih?`)) return;
+
+    let success = 0;
+    showCustAlert(`Sedang menghapus ${ids.length} data...`, 'info');
+
+    for (const id of ids) {
+        try {
+            const resp = await fetch('/api.php?action=delete_customer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id })
+            }).then(r => r.json());
+            if (resp && resp.success) success++;
+        } catch (e) { console.error(e); }
+    }
+
+    showCustAlert(`Selesai. ${success} berhasil dihapus.`, 'success');
+    loadCustomersTable();
+    if(document.getElementById('btnBulkDelete')) document.getElementById('btnBulkDelete').style.display = 'none';
+    if(document.getElementById('selectAll')) document.getElementById('selectAll').checked = false;
+}
+
 window.addEventListener('DOMContentLoaded', function(){
     loadCustomersTable();
     document.getElementById('btnRefresh').addEventListener('click', ()=> loadCustomersTable());
     document.getElementById('btnSearch').addEventListener('click', ()=> loadCustomersTable(document.getElementById('searchCustomers').value));
+    
+    const selectAll = document.getElementById('selectAll');
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            document.querySelectorAll('.cust-checkbox').forEach(cb => cb.checked = this.checked);
+            updateBulkBtn();
+        });
+    }
+
+    const bulkBtn = document.getElementById('btnBulkDelete');
+    if (bulkBtn) bulkBtn.addEventListener('click', handleBulkDelete);
 });
 </script>
