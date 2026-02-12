@@ -47,7 +47,7 @@ services:
       PMA_PASSWORD: secret
     ports:
       - "8307:80"
-    depends_on: 
+    depends_on:
 
 
       - mysql

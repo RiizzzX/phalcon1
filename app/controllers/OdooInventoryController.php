@@ -13,7 +13,7 @@ class OdooInventoryController extends ControllerBase
     public function indexAction()
     {
         try {
-            $this->view->pick('odoo/inventory/index');
+            $this->view->pick('index');
             
             $products = Inventory::find([
                 'order' => 'id DESC'

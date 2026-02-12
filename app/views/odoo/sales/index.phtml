@@ -6,9 +6,9 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; color: #333; }
-        
+
         .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
-        
+
         .header {
             background: linear-gradient(135deg, #00c9a7 0%, #00a878 100%);
             color: white;
@@ -17,10 +17,10 @@
             margin-bottom: 30px;
             box-shadow: 0 4px 15px rgba(0, 201, 167, 0.4);
         }
-        
+
         .header h1 { margin-bottom: 10px; font-size: 28px; }
         .header p { opacity: 0.9; font-size: 16px; }
-        
+
         .btn {
             padding: 12px 24px;
             border: none;
@@ -32,21 +32,21 @@
             display: inline-block;
             text-decoration: none;
         }
-        
+
         .btn-primary { background: linear-gradient(135deg, #00c9a7 0%, #00a878 100%); color: white; }
         .btn-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
         .btn-danger { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); color: white; }
         .btn-small { padding: 8px 16px; font-size: 13px; margin: 3px; }
         .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        
+
         .action-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        
+
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
         th { background: linear-gradient(135deg, #00c9a7 0%, #00a878 100%); color: white; padding: 15px; text-align: left; font-weight: 600; }
         td { padding: 15px; border-bottom: 1px solid #ecf0f1; }
         tbody tr:hover { background: #f8f9fa; }
-        
+
         .badge {
             padding: 6px 12px;
             border-radius: 20px;
@@ -54,13 +54,13 @@
             font-weight: 600;
             display: inline-block;
         }
-        
+
         .badge-draft { background: #e2e3e5; color: #383d41; }
         .badge-sent { background: #cce5ff; color: #004085; }
         .badge-sale { background: #d4edda; color: #155724; }
         .badge-done { background: #d1ecf1; color: #0c5460; }
         .badge-cancel { background: #f8d7da; color: #721c24; }
-        
+
         .modal {
             display: none;
             position: fixed;
@@ -71,12 +71,12 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
         }
-        
+
         .modal.show { display: flex !important; }
         .modal-content { background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 600px; margin: auto; }
         .modal-header { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #ecf0f1; }
         .modal-footer { margin-top: 25px; padding-top: 15px; border-top: 1px solid #ecf0f1; text-align: right; }
-        
+
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; }
         .form-group input, .form-group select, .form-group textarea {
@@ -91,7 +91,7 @@
             outline: none;
             box-shadow: 0 0 0 3px rgba(0, 201, 167, 0.1);
         }
-        
+
         .alert {
             padding: 15px 20px;
             border-radius: 8px;
@@ -101,7 +101,7 @@
         .alert.show { display: block; }
         .alert-success { background: #d4edda; color: #155724; }
         .alert-danger { background: #f8d7da; color: #721c24; }
-        
+
         .spinner {
             display: inline-block;
             width: 16px;
@@ -111,7 +111,7 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
-        
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -121,7 +121,7 @@
 <body>
     <div class="container">
         <div style="margin-bottom: 20px; font-size: 14px;">
-            <a href="/odoo-dashboard" style="color: #00c9a7; text-decoration: none;">📊 Dashboard</a> / 
+            <a href="/odoo-dashboard" style="color: #00c9a7; text-decoration: none;">📊 Dashboard</a> /
             <span style="color: #7f8c8d;">💰 Sales Orders</span>
         </div>
 
@@ -358,7 +358,7 @@
             orders.forEach(order => {
                 const badge = `<span class="badge badge-${order.state}">${getStateLabel(order.state)}</span>`;
                 let actionBtns = '';
-                
+
                 if (order.state === 'draft') {
                     actionBtns += `<button class="btn btn-success btn-small" onclick="confirmAction('confirm', ${order.id}, 'Konfirmasi SO ini?')">✅ Konfirmasi</button>`;
                     actionBtns += `<button class="btn btn-danger btn-small" onclick="confirmAction('cancel', ${order.id}, 'Batalkan SO ini?')">❌ Batalkan</button>`;
@@ -749,13 +749,13 @@
             const checked = document.querySelectorAll('.so-checkbox:checked');
             const ids = Array.from(checked).map(cb => cb.value);
             if (ids.length === 0) return;
-            
+
             if (confirm(`Yakin hapus ${ids.length} Sales Order yang dipilih?`)) {
                 showLoading(true);
-                const promises = ids.map(id => 
+                const promises = ids.map(id =>
                     fetch(`${API_URL}?action=odoo_sales_action&type=delete&id=${id}`).then(r => r.json())
                 );
-                
+
                 Promise.all(promises).then(results => {
                     const results_success = results.filter(r => r && r.success).length;
                     showAlert(`Selesai. ${results_success} SO berhasil dihapus.`, 'success');
@@ -857,7 +857,7 @@
                             };
                             return;
                         }
-                        
+
                         let html = `
                             <div style="padding: 20px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px;">
                                 <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
@@ -884,7 +884,7 @@
                                 </thead>
                                 <tbody>
                         `;
-                        
+
                         lines.forEach(l => {
                             html += `
                                 <tr style="border-bottom: 1px solid #eee;">
@@ -895,7 +895,7 @@
                                 </tr>
                             `;
                         });
-                        
+
                         html += `
                                 </tbody>
                                 <tfoot>
@@ -906,7 +906,7 @@
                                 </tfoot>
                             </table>
                         `;
-                        
+
                         body.innerHTML = html;
                     } else {
                         body.innerHTML = `<div class="alert alert-danger">Gagal memuat invoice: ${resp.error || 'Unknown error'}</div>`;
@@ -925,7 +925,7 @@
 </html>
 
     <!-- Server-side sales orders table removed — client-side table (#soTable) is used for rendering -->
-    
+
     <div style="margin-top: 30px; text-align: center;">
         <a href="/odoo-dashboard" style="color: #3498db; text-decoration: none;">← Back to Dashboard</a>
     </div>

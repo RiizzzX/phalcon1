@@ -3,7 +3,7 @@
 <style>
     /* Modern UI Styles - Matches Invoicing Page */
     body { background-color: #f7f9fc; }
-    
+
     .modern-table { width: 100%; border-collapse: collapse; font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
     .modern-table thead th { padding: 16px; text-align: left; color: #fff; font-size: 14px; letter-spacing: 0.3px; }
     /* Gradient for Partner - Blue/Purple theme */
@@ -20,7 +20,7 @@
     .action-btn.create:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(39,174,96,0.15); }
     .action-btn.delete { color: #c0392b; background: rgba(224,74,64,0.06); }
     .action-btn.delete:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(192,57,43,0.08); }
-    
+
     .btn-main { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: transform 0.1s; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(118, 75, 162, 0.2); }
     .btn-main:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(118, 75, 162, 0.3); }
 
@@ -36,7 +36,7 @@
     .modal.show { display:flex; }
     .modal-content { background: #fff; border-radius: 16px; box-shadow: 0 25px 50px rgba(0,0,0,0.2); overflow: hidden; animation: modalSlide 0.3s ease-out; border: 1px solid rgba(255,255,255,0.1); }
     @keyframes modalSlide { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    
+
     .modal-header { padding: 20px 25px; border-bottom: 1px solid #f0f3f6; background: #fff; display: flex; justify-content: space-between; align-items: center; }
     .modal-header h3 { margin: 0; font-size: 20px; color: #2d3748; font-weight: 700; }
     .modal-body { padding: 25px; max-height: 70vh; overflow-y: auto; }
@@ -115,12 +115,12 @@
         </div>
         <div class="modal-body">
             <div id="invoiceMsg" style="margin-bottom:10px"></div>
-            
+
             <div class="form-group">
                 <label>Partner</label>
                 <input id="inv_partner" readonly style="background:#f7fafc; color:#4a5568 cursor: not-allowed;">
             </div>
-            
+
             <div style="display:flex; gap:16px; margin-top:16px;">
                 <div class="form-group" style="flex:1">
                     <label>Tipe Dokumen</label>
@@ -164,7 +164,7 @@
 
             <div class="checkbox-wrapper">
                 <label class="checkbox-label" style="font-weight: 600; color:#2d3748;">
-                    <input type="checkbox" id="inv_post_now" checked> 
+                    <input type="checkbox" id="inv_post_now" checked>
                     Post invoice sekarang
                 </label>
             </div>
@@ -244,10 +244,10 @@ document.getElementById('btnBulkDeletePart').addEventListener('click', function(
     const checked = document.querySelectorAll('.part-checkbox:checked');
     const ids = Array.from(checked).map(cb => cb.value);
     if (ids.length === 0) return;
-    
+
     if (confirm(`Yakin hapus ${ids.length} Partner yang dipilih?`)) {
         const promises = ids.map(id => fetch(`/api.php?action=delete_customer&id=${id}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: id }) }).then(r => r.json()));
-        
+
         Promise.all(promises).then(results => {
             const successCount = results.filter(r => r && r.success).length;
             showPartAlert(`Selesai. ${successCount} Partner berhasil dihapus.`, 'success');
@@ -266,12 +266,12 @@ function loadPartners(q=''){
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 30px;"><div style="color:#aaa">Sedang memuat data...</div></td></tr>';
 
     fetch(`${API}?action=list_partners`).then(r=>r.json()).then(data=>{
-        tbody.innerHTML=''; 
+        tbody.innerHTML='';
         if(!data||!data.success) { return tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red; padding: 20px;">Gagal memuat data partners</td></tr>'; }
-        
-        let arr=data.data; 
+
+        let arr=data.data;
         if(q){ q=q.toLowerCase(); arr=arr.filter(s=> (s.name||'').toLowerCase().includes(q) || (s.email||'').toLowerCase().includes(q)); }
-        
+
         if(arr.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 40px; color: #718096;">Tidak ada partner ditemukan.<br><small>Klik "Tambah Partner" untuk memulai.</small></td></tr>';
             return;
@@ -281,8 +281,8 @@ function loadPartners(q=''){
             const id = s.id;
             const r1 = (s.customer_rank && s.customer_rank>0) || s.is_customer || false;
             const r2 = (s.supplier_rank && s.supplier_rank>0) || s.is_supplier || false;
-            const tr=document.createElement('tr'); 
-            
+            const tr=document.createElement('tr');
+
             tr.innerHTML=`<td style="text-align: center; padding-left: 24px;"><input type="checkbox" class="part-checkbox" value="${id}"></td>
                           <td><span style="background:#edf2f7; padding:4px 8px; border-radius:4px; font-family:monospace; font-size:13px;">#${id}</span></td>
                           <td style="font-weight:600; color:#2d3748;">${s.name||'-'}</td>
@@ -309,7 +309,7 @@ function loadPartners(q=''){
                     updateBulkBtnPart();
                 };
             }
-            
+
             // individual checkbox handler
             tr.querySelector('.part-checkbox').onchange = updateBulkBtnPart;
 
@@ -348,11 +348,11 @@ function loadPartners(q=''){
                     console.debug('create invoice clicked for partner:', s);
                     const pid = this.dataset.id;
                     const partnerName = s.name || 'Unknown';
-                    
+
                     if (/^\d+$/.test(pid)) {
                         document.getElementById('inv_partner').value = partnerName + ' (ID: ' + pid + ')';
                         document.getElementById('inv_partner').dataset.partnerId = pid;
-                        
+
                         // Default move type based on flags
                         const isCust = (s.customer_rank && s.customer_rank>0) || s.is_customer;
                         const isSupp = (s.supplier_rank && s.supplier_rank>0) || s.is_supplier;
@@ -368,7 +368,7 @@ function loadPartners(q=''){
                         fetch('/inventory-api/list?limit=1000') // increased limit
                             .then(r=>r.json())
                             .then(resp=>{
-                                const sel = document.getElementById('inv_product'); 
+                                const sel = document.getElementById('inv_product');
                                 sel.innerHTML='';
                                 if (resp && resp.success) {
                                     sel.innerHTML = '<option value="">-- Pilih Produk --</option>';
@@ -384,7 +384,7 @@ function loadPartners(q=''){
                                         opt.textContent = `${p.name} (Stok: ${stock}) - Rp ${priceText}`;
                                         sel.appendChild(opt);
                                     });
-                                    
+
                                     // Add change listener
                                     sel.onchange = function() {
                                         const opt = this.options[this.selectedIndex];
@@ -431,7 +431,7 @@ function loadPartners(q=''){
                                 if (resp && resp.success && (resp.data.sales.length > 0 || resp.data.purchases.length > 0)) {
                                     const orderSel = document.getElementById('inv_source_order');
                                     orderSel.innerHTML = '<option value="">-- Pilih Order Terkonfirmasi (Opsional) --</option>';
-                                    
+
                                     if (resp.data.sales.length > 0) {
                                         const optGroup = document.createElement('optgroup'); optGroup.label = "Sales Orders (SO)";
                                         resp.data.sales.forEach(o => {
@@ -442,7 +442,7 @@ function loadPartners(q=''){
                                         });
                                         orderSel.appendChild(optGroup);
                                     }
-                                    
+
                                     if (resp.data.purchases.length > 0) {
                                         const optGroup = document.createElement('optgroup'); optGroup.label = "Purchase Orders (PO)";
                                         resp.data.purchases.forEach(o => {
@@ -457,7 +457,7 @@ function loadPartners(q=''){
                                 }
                             })
                             .catch(err => console.error('Error fetching partner orders:', err));
-                        
+
                         document.getElementById('invoiceModal').classList.add('show');
                         return;
                     }
@@ -480,24 +480,24 @@ function loadPartners(q=''){
 
             // Delete handler
             const delBtn = tr.querySelector('button.btn-delete');
-            if (delBtn) delBtn.addEventListener('click', function(){ 
-                const id=this.dataset.id; 
-                if(!confirm('Hapus partner '+(s.name||id)+'?')) return; 
+            if (delBtn) delBtn.addEventListener('click', function(){
+                const id=this.dataset.id;
+                if(!confirm('Hapus partner '+(s.name||id)+'?')) return;
                 fetch('/api.php?action=delete_partner',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id})})
                 .then(r=>r.json())
-                .then(resp=>{ 
-                    if(resp && resp.success){ showPartAlert(resp.message||'Dihapus','success'); loadPartners(q);} 
-                    else showPartAlert('Gagal: '+(resp.error||'Unknown'),'danger'); 
-                }).catch(err=>showPartAlert('Error: '+err.message,'danger')); 
+                .then(resp=>{
+                    if(resp && resp.success){ showPartAlert(resp.message||'Dihapus','success'); loadPartners(q);}
+                    else showPartAlert('Gagal: '+(resp.error||'Unknown'),'danger');
+                }).catch(err=>showPartAlert('Error: '+err.message,'danger'));
             });
         });
     }).catch(err=>showPartAlert('Error: '+err.message,'danger'));
 }
 
-window.addEventListener('DOMContentLoaded', function(){ 
-    loadPartners(); 
-    
-    document.getElementById('btnRefreshPart').addEventListener('click', ()=>loadPartners()); 
+window.addEventListener('DOMContentLoaded', function(){
+    loadPartners();
+
+    document.getElementById('btnRefreshPart').addEventListener('click', ()=>loadPartners());
     // Trigger search on enter key as well
     document.getElementById('searchPartners').addEventListener('keyup', (e)=>{ if(e.key === 'Enter') loadPartners(e.target.value) });
     document.getElementById('btnSearchPart').addEventListener('click', ()=>loadPartners(document.getElementById('searchPartners').value));
@@ -511,14 +511,14 @@ window.addEventListener('DOMContentLoaded', function(){
             const originalText = btn.textContent;
             btn.disabled = true; btn.textContent = '🧹 Sedang...';
             fetch('/api.php?action=cleanup_duplicate_partners').then(res => res.json()).then(data => {
-                if (data.success) { alert(`Berhasil!\nDihapus: ${data.deleted_count}`); loadPartners(); } 
+                if (data.success) { alert(`Berhasil!\nDihapus: ${data.deleted_count}`); loadPartners(); }
                 else { alert('Info: ' + (data.error || 'Unknown')); }
             }).catch(err => { console.error(err); alert('Error network'); }).finally(() => { btn.disabled = false; btn.textContent = originalText; });
         });
     }
     document.getElementById('openPartnerModal').addEventListener('click', ()=>{ document.getElementById('partnerModal').classList.add('show'); });
     document.getElementById('closePartnerModal').addEventListener('click', ()=>{ document.getElementById('partnerModal').classList.remove('show'); });
-    
+
     document.getElementById('savePartnerBtn').addEventListener('click', ()=>{
         const name=document.getElementById('p_name').value||''; const email=document.getElementById('p_email').value||''; const phone=document.getElementById('p_phone').value||'';
         const is_customer=document.getElementById('p_is_customer').checked?1:0; const is_supplier=document.getElementById('p_is_supplier').checked?1:0; const saveTo=(document.querySelector('input[name="partner_save_to"]:checked')||{}).value||'local';
@@ -528,7 +528,7 @@ window.addEventListener('DOMContentLoaded', function(){
 
     // Invoice modal interactions
     document.getElementById('closeInvoiceModal').addEventListener('click', ()=>{ document.getElementById('invoiceModal').classList.remove('show'); });
-    
+
     // Auto-update price, stock and sync info when product selected
     document.getElementById('inv_product').addEventListener('change', function(){
         const opt = this.options[this.selectedIndex];
@@ -596,10 +596,10 @@ window.addEventListener('DOMContentLoaded', function(){
         const opt = this.options[this.selectedIndex];
         const type = opt.dataset.type;
         document.getElementById('inv_move_type').value = (type === 'sale') ? 'out_invoice' : 'in_invoice';
-        
+
         fetch(`/api.php?action=get_order_details&id=${orderId}&type=${type}`).then(r=>r.json()).then(resp=>{
             if (resp && resp.success && resp.data.length > 0) {
-                const line = resp.data[0]; 
+                const line = resp.data[0];
                 if (line.product_id) {
                     const sel = document.getElementById('inv_product');
                     let matched = false;
@@ -627,7 +627,7 @@ window.addEventListener('DOMContentLoaded', function(){
             const qty = parseFloat(document.getElementById('inv_qty').value);
             const price = parseFloat(document.getElementById('inv_price').value);
             const orderId = document.getElementById('inv_source_order').value;
-            
+
             const prodOpt = document.getElementById('inv_product').selectedOptions ? document.getElementById('inv_product').selectedOptions[0] : null;
             const productName = (prodOpt && prodOpt.dataset && prodOpt.dataset.name) ? prodOpt.dataset.name : (document.getElementById('inv_product_name').value || (productIdRaw ? 'Product ID '+productIdRaw : 'Product'));
             let productId = null;

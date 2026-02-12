@@ -36,8 +36,14 @@ class OdooInvoicingController extends OdooControllerBase
                 );
                 $fetchDebug[] = ['step' => 'primary', 'success' => true, 'count' => is_array($invoices) ? count($invoices) : 0];
             } catch (\Throwable $e) {
-                $fetchDebug[] = ['step' => 'primary', 'success' => false, 'error' => $e->getMessage()];
-                error_log('Warning: invoice primary domain fetch failed: ' . $e->getMessage());
+                $errorMessage = $e->getMessage();
+                $fetchDebug[] = ['step' => 'primary', 'success' => false, 'error' => $errorMessage];
+                error_log('Warning: invoice primary domain fetch failed: ' . $errorMessage);
+                
+                if (stripos($errorMessage, 'Access Denied') !== false || stripos($errorMessage, 'permission') !== false) {
+                    $this->flash->warning("⚠️ Akun Odoo Anda tidak memiliki izin untuk mengakses modul Invoicing (account.move). Silakan hubungi admin Odoo.");
+                }
+                
                 $invoices = [];
             }
 

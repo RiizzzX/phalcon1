@@ -46,7 +46,7 @@ try {
 
     $action = $_REQUEST['action'] ?? $_POST['action'] ?? null;
     $method = $_SERVER['REQUEST_METHOD'];
-    
+
     if (!$action) {
         throw new Exception('Action parameter required');
     }
@@ -163,9 +163,9 @@ try {
         }
         return $db;
     };
-    
+
     // ==================== PURCHASE ORDERS ====================
-    
+
     // Purchase-specific logger for debugging problematic responses
     $logPurchase = function($tag, $data = []) {
         $tmp = dirname(__DIR__) . '/temp';
@@ -253,7 +253,7 @@ try {
         }
 
         $po = $order[0];
-        
+
         // Get order lines
         if (!empty($po['order_line'])) {
             $lines = $client->executePublic('purchase.order.line', 'read',
@@ -395,7 +395,7 @@ try {
     if ($action === 'update_purchase_order') {
         $po_id = (int)($_REQUEST['id'] ?? 0);
         $data = json_decode(file_get_contents('php://input'), true) ?? $_POST;
-        
+
         if (!$po_id) throw new Exception('Purchase Order ID required');
 
         $update_data = [];
@@ -620,7 +620,27 @@ try {
         $po_id = (int)($_REQUEST['id'] ?? 0);
         if (!$po_id) throw new Exception('Purchase Order ID required');
 
-        $client->executePublic('purchase.order', 'button_cancel', [[$po_id]]);
+        try {
+            $client->executePublic('purchase.order', 'button_cancel', [[$po_id]]);
+        } catch (Exception $e) {
+            $msg = $e->getMessage();
+            // Handle XML-RPC marshalling issue where server action executed but returned None (nil)
+            // This happens on some Odoo setups when the rejection button succeeds but doesn't return a value.
+            if (stripos($msg, 'cannot marshal None') !== false || stripos($msg, 'TypeError') !== false) {
+                // Verify the state; if cancelled, we can treat it as success
+                try {
+                    $verify = $client->executePublic('purchase.order', 'read', [[$po_id]], ['fields' => ['state']]);
+                    if (empty($verify) || ($verify[0]['state'] ?? '') !== 'cancel') {
+                        throw new Exception('Gagal menolak PO (Verifikasi status gagal): ' . $msg);
+                    }
+                } catch (Exception $re) {
+                    // Verification failed but it might be due to same marshal issue on read? (unlikely for read)
+                    throw new Exception('Gagal menolak PO: ' . $msg);
+                }
+            } else {
+                throw $e;
+            }
+        }
 
         $sendJson([
             'success' => true,
@@ -873,7 +893,7 @@ try {
 
     if ($action === 'create_sales_order') {
         $data = json_decode(file_get_contents('php://input'), true) ?? $_POST;
-        
+
         $customer_raw = $data['customer_id'] ?? null;
 
         // Support local customers (ids like 'local-<id>') by mapping/creating partner in Odoo
@@ -1202,7 +1222,7 @@ try {
         $orderId = $data['order_id'] ?? null;
 
         if (!$partnerId) throw new Exception('partner_id required');
-        
+
         try {
             // In Odoo, it's better to create lines together with the move
             $line = [
@@ -1210,7 +1230,7 @@ try {
                 'quantity' => $quantity,
                 'price_unit' => $price,
             ];
-            
+
             if ($productId && (int)$productId > 0) {
                 $line['product_id'] = (int)$productId;
             }
@@ -1224,7 +1244,7 @@ try {
                     [0, 0, $line]
                 ]
             ];
-            
+
             if ($orderId) {
                 $prefix = ($moveType === 'out_invoice') ? 'SO' : 'PO';
                 $invoice['invoice_origin'] = $prefix . $orderId;
@@ -1247,17 +1267,17 @@ try {
 
             // Return invoice id and whether it was posted
             $sendJson([
-                'success' => true, 
-                'action' => 'create_invoice', 
-                'message' => 'Invoice created successfully', 
+                'success' => true,
+                'action' => 'create_invoice',
+                'message' => 'Invoice created successfully',
                 'invoice_id' => $invoiceId,
                 'posted' => $posted
             ]);
         } catch (Exception $e) {
             error_log("Odoo Create Invoice Error: " . $e->getMessage());
             $sendJson([
-                'success' => false, 
-                'action' => 'create_invoice', 
+                'success' => false,
+                'action' => 'create_invoice',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -1873,7 +1893,7 @@ try {
 
         $model = ($type === 'sale') ? 'sale.order.line' : 'purchase.order.line';
         $domain = ($type === 'sale') ? [['order_id', '=', $orderId]] : [['order_id', '=', $orderId]];
-        
+
         $lines = $client->executePublic($model, 'search_read',
             [$domain],
             ['fields' => ['product_id', 'product_uom_qty', 'qty_received', 'qty_invoiced', 'price_unit', 'name']]
@@ -1904,7 +1924,7 @@ try {
 
     if ($action === 'create_product') {
         $data = json_decode(file_get_contents('php://input'), true) ?? $_POST;
-        
+
         $product_data = [
             'name' => $data['name'] ?? throw new Exception('Product name required'),
             'list_price' => (float)($data['price'] ?? 0),
@@ -1948,7 +1968,7 @@ try {
             // Ensure necessary columns exist
             $havePhone = count($db->query("SHOW COLUMNS FROM users LIKE 'phone'")->fetchAll()) > 0;
             if (!$havePhone) $db->exec("ALTER TABLE users ADD COLUMN phone VARCHAR(50) NULL AFTER email");
-            
+
             $haveOdooId = count($db->query("SHOW COLUMNS FROM users LIKE 'odoo_id'")->fetchAll()) > 0;
             if (!$haveOdooId) $db->exec("ALTER TABLE users ADD COLUMN odoo_id INT(11) NULL AFTER phone");
 
@@ -1959,7 +1979,7 @@ try {
 
             $stmt = $db->query("SELECT id, name, email, phone, odoo_id, is_customer, is_supplier FROM users ORDER BY id DESC");
             $localUsers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
+
             // Map local flags to Odoo IDs
             $localDataMap = [];
             foreach ($localUsers as $u) {
@@ -1987,7 +2007,7 @@ try {
             foreach ($localUsers as $u) {
                 // Skip if this local user is already linked to an Odoo partner and that partner is in the list
                 if ($u['odoo_id'] && in_array((int)$u['odoo_id'], $existingOdooIds)) {
-                    continue; 
+                    continue;
                 }
 
                 $partners[] = [
@@ -2075,7 +2095,7 @@ try {
             // Ensure columns exist
             $havePhone = count($db->query("SHOW COLUMNS FROM users LIKE 'phone'")->fetchAll()) > 0;
             if (!$havePhone) $db->exec("ALTER TABLE users ADD COLUMN phone VARCHAR(50) NULL AFTER email");
-            
+
             $haveOdooId = count($db->query("SHOW COLUMNS FROM users LIKE 'odoo_id'")->fetchAll()) > 0;
             if (!$haveOdooId) $db->exec("ALTER TABLE users ADD COLUMN odoo_id INT(11) NULL AFTER phone");
 
@@ -2086,7 +2106,7 @@ try {
 
             $stmt = $db->prepare('INSERT INTO users (name, email, phone, odoo_id, is_customer, is_supplier) VALUES (:name, :email, :phone, :oid, :c, :s)');
             $stmt->execute([':name'=>$name,':email'=>$email,':phone'=>$phone,':oid'=>$partner_id,':c'=>$is_customer,':s'=>$is_supplier]);
-            
+
             $localId = (int)$db->lastInsertId();
         } catch (Exception $e) {
             error_log('Warning: create_partner local save failed: '.$e->getMessage());
@@ -2174,11 +2194,11 @@ try {
     if ($action === 'sync_products') {
         try {
             // Fetch both saleable and purchasable products
-            $products = $client->executePublic('product.product', 'search_read', 
-                [['|', ['sale_ok', '=', true], ['purchase_ok', '=', true]]], 
+            $products = $client->executePublic('product.product', 'search_read',
+                [['|', ['sale_ok', '=', true], ['purchase_ok', '=', true]]],
                 ['fields' => ['id', 'name', 'list_price', 'standard_price', 'qty_available', 'description']]
             );
-            
+
             if (is_array($products)) {
                 $db = $getDb();
                 $count = 0;
@@ -2298,7 +2318,7 @@ try {
             // Ensure necessary columns exist
             $havePhone = count($db->query("SHOW COLUMNS FROM users LIKE 'phone'")->fetchAll()) > 0;
             if (!$havePhone) $db->exec("ALTER TABLE users ADD COLUMN phone VARCHAR(50) NULL AFTER email");
-            
+
             $haveSupplier = count($db->query("SHOW COLUMNS FROM users LIKE 'is_supplier'")->fetchAll()) > 0;
             if (!$haveSupplier) $db->exec("ALTER TABLE users ADD COLUMN is_supplier TINYINT(1) DEFAULT 0");
 
@@ -2409,7 +2429,7 @@ try {
 
     if ($action === 'create_partner') {
         $data = json_decode(file_get_contents('php://input'), true) ?? $_POST;
-        
+
         $partner_data = [
             'name' => $data['name'] ?? throw new Exception('Partner name required'),
             'email' => $data['email'] ?? '',
@@ -2685,7 +2705,7 @@ try {
     if ($action === 'cleanup_duplicate_partners') {
         // Fetch all partners (ID, Name) from Odoo
         $partners = $client->executePublic('res.partner', 'search_read', [[]], ['fields'=>['id','name']]);
-        
+
         $groups = [];
         foreach ($partners as $p) {
             $nameNorm = trim(strtolower($p['name']));
@@ -2693,22 +2713,22 @@ try {
             if (!isset($groups[$nameNorm])) $groups[$nameNorm] = [];
             $groups[$nameNorm][] = $p;
         }
-        
+
         $deletedCount = 0;
         $archivedCount = 0;
         $errors = [];
-        
+
         foreach ($groups as $name => $list) {
             if (count($list) > 1) {
                 // Determine which one to keep.
                 // Strategy: Keep the one with the Lowest ID (assuming it's the original/oldest).
                 // Sort by ID ascending.
                 usort($list, function($a, $b) { return $a['id'] - $b['id']; });
-                
+
                 // Keep index 0, delete the rest
                 $keep = $list[0];
                 $toDelete = array_slice($list, 1);
-                
+
                 foreach ($toDelete as $dup) {
                     try {
                         // Attempt to delete
@@ -2728,7 +2748,7 @@ try {
                 }
             }
         }
-        
+
         $sendJson([
             'success' => true,
             'action' => 'cleanup_duplicate_partners',
@@ -2758,7 +2778,7 @@ try {
 
     if ($action === 'update_product') {
         $data = json_decode(file_get_contents('php://input'), true) ?? $_POST;
-        
+
         $product_id = (int)($data['id'] ?? 0);
         if (!$product_id) throw new Exception('Product ID required');
 
@@ -2783,7 +2803,7 @@ try {
 
     if ($action === 'delete_product') {
         $data = json_decode(file_get_contents('php://input'), true) ?? $_POST;
-        
+
         $product_id = (int)($data['id'] ?? $_REQUEST['id'] ?? 0);
         if (!$product_id) throw new Exception('Product ID required');
 
@@ -2799,7 +2819,7 @@ try {
 
     if ($action === 'update_stock' || $action === 'adjust_stock') {
         $data = json_decode(file_get_contents('php://input'), true) ?? $_POST;
-        
+
         $product_id = (int)($data['product_id'] ?? 0);
         $new_quantity = (float)($data['quantity'] ?? 0);
         $location_id = (int)($data['location_id'] ?? 8); // Default: Stock location
@@ -2814,7 +2834,7 @@ try {
 
         if (!empty($quants)) {
             // Update existing
-            $client->executePublic('stock.quant', 'write', 
+            $client->executePublic('stock.quant', 'write',
                 [[$quants[0]['id']], ['quantity' => $new_quantity]]
             );
         } else {
@@ -2839,7 +2859,7 @@ try {
 
     if ($action === 'get_stock_movements') {
         $limit = (int)($_REQUEST['limit'] ?? 50);
-        
+
         $movements = $client->executePublic('stock.move', 'search_read',
             [[['state', '=', 'done']]],
             [

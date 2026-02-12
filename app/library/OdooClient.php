@@ -57,9 +57,14 @@ class OdooClient
      */
     private function valueToXml($value)
     {
+        if (is_object($value)) {
+            $value = (array)$value;
+        }
+
         if (is_array($value)) {
             // Check if associative array (struct) or indexed array
-            if (array_keys($value) === range(0, count($value) - 1)) {
+            // Empty array is treated as empty struct for Odoo's kwargs compatibility
+            if (!empty($value) && array_keys($value) === range(0, count($value) - 1)) {
                 // Indexed array
                 $xml = '<value><array><data>';
                 foreach ($value as $item) {
@@ -68,10 +73,10 @@ class OdooClient
                 $xml .= '</data></array></value>';
                 return $xml;
             } else {
-                // Associative array (struct)
+                // Associative array (struct) or empty array
                 $xml = '<value><struct>';
                 foreach ($value as $key => $val) {
-                    $xml .= '<member><name>' . htmlspecialchars($key) . '</name>' . $this->valueToXml($val) . '</member>';
+                    $xml .= '<member><name>' . htmlspecialchars((string)$key) . '</name>' . $this->valueToXml($val) . '</member>';
                 }
                 $xml .= '</struct></value>';
                 return $xml;
@@ -235,13 +240,18 @@ class OdooClient
             return $this->uid;
         }
 
-        $this->uid = $this->xmlRpcCall('/xmlrpc/2/common', 'authenticate', [
+        $result = $this->xmlRpcCall('/xmlrpc/2/common', 'authenticate', [
             $this->db,
             $this->username,
             $this->password,
             []
         ]);
 
+        if (!$result) {
+            throw new \Exception("Odoo authentication failed for user '{$this->username}' on database '{$this->db}'. Please check your credentials.");
+        }
+
+        $this->uid = $result;
         return $this->uid;
     }
 
@@ -260,15 +270,22 @@ class OdooClient
             $this->password,
             $model,
             $method,
-            $args
+            $args,
+            (object)$kwargs // Force an empty object/struct for kwargs if empty
         ];
 
-        // Add kwargs if provided
-        if (!empty($kwargs)) {
-            $params[] = $kwargs;
+        try {
+            return $this->xmlRpcCall('/xmlrpc/2/object', 'execute_kw', $params);
+        } catch (\Exception $e) {
+            $msg = $e->getMessage();
+            // Handle XML-RPC marshalling issue where server-side action executed successfully 
+            // but returned None (nil), causing Odoo's Python XML-RPC marshaller to crash.
+            if (stripos($msg, 'cannot marshal None') !== false || (stripos($msg, 'TypeError') !== false && stripos($msg, 'marshal') !== false)) {
+                error_log("OdooClient: Detected 'marshal None' error for {$model}.{$method}. Treating as success.");
+                return true; 
+            }
+            throw $e;
         }
-
-        return $this->xmlRpcCall('/xmlrpc/2/object', 'execute_kw', $params);
     }
 
     /**
