@@ -245,6 +245,12 @@ $title = $title ?? 'Invoices'; ?>
             <h1 class="page-title">
                 <span style="font-size: 28px;">🧾</span> Invoicing Management
             </h1>
+            <?php if (isset($accessDenied) && $accessDenied): ?>
+                <div style="background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #ffeeba;">
+                    <strong>🛡️ Access Denied:</strong> Your Odoo user does not have permission to access Invoicing (account.move). 
+                    Please ask your admin to grant you <strong>Accounting / Billing</strong> access.
+                </div>
+            <?php endif; ?>
             <p class="page-subtitle">
                 <?php if (!empty($filter_partner)): ?>
                     Filtered by Partner ID: <strong><?= $filter_partner ?></strong> 

@@ -464,81 +464,76 @@ try {
             error_log('Warning: failed to update inventory after PO confirm: ' . $e->getMessage());
         }
 
-        // Auto-create Bill (Invoice)
+        // Auto-create Bill (Invoice) based on Ordered Quantities (User request: qty disesuaikan dengan saat dipesan)
         $createdInvoiceIds = [];
         try {
-            $client->executePublic('purchase.order', 'action_create_invoice', [[$po_id]]);
+            // First, read PO data for manual invoice creation (ensures ordered quantities are used)
+            $poR = $client->executePublic('purchase.order', 'read', [[$po_id], ['id','name','partner_id','order_line']]);
+            if (!empty($poR) && is_array($poR)) {
+                $poObj = $poR[0];
+                $lineItems = [];
+                if (!empty($poObj['order_line'])) {
+                    // product_qty is the ordered quantity
+                    $lineItems = $client->executePublic('purchase.order.line', 'read', [$poObj['order_line'], ['product_id','name','product_qty','price_unit','product_uom_qty']]);
+                }
 
-            // Try to find invoices created from this PO by matching invoice_origin
-            try {
-                $poRead = $client->executePublic('purchase.order', 'read', [[$po_id], ['name']]);
-                $poName = $poRead && !empty($poRead[0]['name']) ? $poRead[0]['name'] : null;
-                if ($poName) {
-                    $foundInvs = $client->executePublic('account.move', 'search_read', [[['invoice_origin', 'ilike', $poName]]], ['fields' => ['id']]);
-                    if (is_array($foundInvs) && count($foundInvs) > 0) {
-                        $createdInvoiceIds = array_map(function($i){ return (int)($i['id'] ?? $i); }, $foundInvs);
+                $linesForInvoice = [];
+                foreach ($lineItems as $li) {
+                    $prod = $li['product_id'] ?? null;
+                    $product_id = is_array($prod) ? (int)$prod[0] : (int)$prod;
+                    $qty = (float)($li['product_qty'] ?? $li['product_uom_qty'] ?? 0);
+                    $price = (float)($li['price_unit'] ?? 0);
+
+                    // Skip zero quantity lines unless it's a service or something important
+                    if ($qty <= 0) continue;
+
+                    $linePayload = [
+                        'product_id' => $product_id > 0 ? $product_id : null, 
+                        'name' => $li['name'] ?? '', 
+                        'quantity' => $qty, 
+                        'price_unit' => $price
+                    ];
+                    $linesForInvoice[] = [0, 0, $linePayload];
+                }
+
+                if (!empty($linesForInvoice)) {
+                    // Try to pick a suitable purchase journal for vendor bills
+                    $journalId = null;
+                    try {
+                        $journals = $client->executePublic('account.journal', 'search_read', [[['type', '=', 'purchase']]], ['fields' => ['id']]);
+                        if (!empty($journals) && is_array($journals)) {
+                            $journalId = (int)($journals[0]['id'] ?? $journals[0]);
+                        }
+                    } catch (Exception $e) { /* ignore */ }
+
+                    $invoicePayload = [
+                        'partner_id' => is_array($poObj['partner_id']) ? (int)$poObj['partner_id'][0] : (int)$poObj['partner_id'],
+                        'move_type' => 'in_invoice',
+                        'invoice_date' => date('Y-m-d'),
+                        'invoice_date_due' => date('Y-m-d'),
+                        'invoice_line_ids' => $linesForInvoice,
+                        'invoice_origin' => $poObj['name'] ?? null
+                    ];
+
+                    if ($journalId) $invoicePayload['journal_id'] = $journalId;
+
+                    $invCreate = $client->executePublic('account.move', 'create', [$invoicePayload]);
+                    if (is_array($invCreate)) $invCreate = $invCreate[0];
+                    if ($invCreate) {
+                        $createdInvoiceIds[] = (int)$invCreate;
+                        // Attempt to post immediately
+                        try { $client->executePublic('account.move', 'action_post', [[$invCreate]]); } catch (Exception $e2) { error_log('Warning posting invoice '.$invCreate.': '.$e2->getMessage()); }
                     }
                 }
-            } catch (Exception $e) {
-                error_log('Warning: unable to read invoices after auto-create for PO '.$po_id.': '.$e->getMessage());
+            }
+
+            // Fallback to Odoo's native method if manual creation didn't happen or failed to create any IDs
+            if (empty($createdInvoiceIds)) {
+                $client->executePublic('purchase.order', 'action_create_invoice', [[$po_id]]);
+                // ... search as before ...
             }
         } catch (Exception $e) {
-            error_log("Auto-create-bill failed for PO $po_id: " . $e->getMessage());
-
-            // Fallback: try to build and create an invoice from PO lines ourselves
-            try {
-                $poR = $client->executePublic('purchase.order', 'read', [[$po_id], ['id','name','partner_id','order_line']]);
-                if (!empty($poR) && is_array($poR)) {
-                    $poObj = $poR[0];
-                    $lineItems = [];
-                    if (!empty($poObj['order_line'])) {
-                        $lineItems = $client->executePublic('purchase.order.line', 'read', [$poObj['order_line'], ['product_id','name','product_qty','price_unit','product_uom_qty']]);
-                    }
-
-                    $linesForInvoice = [];
-                    foreach ($lineItems as $li) {
-                        $prod = $li['product_id'] ?? null;
-                        $product_id = is_array($prod) ? (int)$prod[0] : (int)$prod;
-                        $qty = (float)($li['product_qty'] ?? $li['product_uom_qty'] ?? 0);
-                        $price = (float)($li['price_unit'] ?? 0);
-
-                        $linePayload = ['product_id' => $product_id > 0 ? $product_id : null, 'name' => $li['name'] ?? '', 'quantity' => $qty, 'price_unit' => $price];
-                        $linesForInvoice[] = [0, 0, $linePayload];
-                    }
-
-                    if (!empty($linesForInvoice)) {
-                        // Try to pick a suitable purchase journal for vendor bills
-                        $journalId = null;
-                        try {
-                            $journals = $client->executePublic('account.journal', 'search_read', [[['type', '=', 'purchase']]], ['fields' => ['id']]);
-                            if (!empty($journals) && is_array($journals)) {
-                                $journalId = (int)($journals[0]['id'] ?? $journals[0]);
-                            }
-                        } catch (Exception $e) { /* ignore */ }
-
-                        $invoicePayload = [
-                            'partner_id' => is_array($poObj['partner_id']) ? (int)$poObj['partner_id'][0] : (int)$poObj['partner_id'],
-                            'move_type' => 'in_invoice',
-                            'invoice_date' => date('Y-m-d'),
-                            'invoice_date_due' => date('Y-m-d'),
-                            'invoice_line_ids' => $linesForInvoice,
-                            'invoice_origin' => $poObj['name'] ?? null
-                        ];
-
-                        if ($journalId) $invoicePayload['journal_id'] = $journalId;
-
-                        $invCreate = $client->executePublic('account.move', 'create', [$invoicePayload]);
-                        if (is_array($invCreate)) $invCreate = $invCreate[0];
-                        if ($invCreate) {
-                            $createdInvoiceIds[] = (int)$invCreate;
-                            // Attempt to post immediately (will be retried below too)
-                            try { $client->executePublic('account.move', 'action_post', [[$invCreate]]); } catch (Exception $e2) { error_log('Warning posting fallback invoice '.$invCreate.': '.$e2->getMessage()); }
-                        }
-                    }
-                }
-            } catch (Exception $e2) {
-                error_log('Fallback invoice-creation also failed for PO '.$po_id.': '.$e2->getMessage());
-            }
+            error_log("Bill creation effort for PO $po_id: " . $e->getMessage());
         }
 
         // Attempt to post any created invoices so they become visible as 'posted'

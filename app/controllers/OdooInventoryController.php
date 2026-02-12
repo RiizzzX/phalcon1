@@ -5,7 +5,7 @@ namespace App\Controllers;
 use App\Models\Inventory;
 use App\Models\Category;
 
-class OdooInventoryController extends ControllerBase
+class OdooInventoryController extends OdooControllerBase
 {
     /**
      * List all products

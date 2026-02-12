@@ -538,38 +538,43 @@
             // Delegate action clicks (view, approve, reject, delete) to handle dynamic rows
             const tbody = document.getElementById('poTableBody');
             if (tbody) {
+                console.debug('Attaching click listener to poTableBody');
                 tbody.addEventListener('click', function (ev) {
-                    const btn = ev.target.closest && ev.target.closest('button');
-                    if (!btn) return;
+                    const target = ev.target;
+                    const btn = target.closest('button');
+                    
+                    if (!btn) {
+                        console.debug('Click on non-button element within tbody', target);
+                        return;
+                    }
+
+                    console.debug('Button clicked:', btn.className, 'Action:', btn.dataset.action, 'ID:', btn.dataset.id);
 
                     // View
-                    if (btn.classList.contains('btn-view')) {
-                        // Debugging & robust id extraction
+                    if (btn.classList.contains('btn-view') || btn.classList.contains('btn-info')) {
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        
                         let id = btn.dataset.id;
-                        if (!id) {
-                            // try parent <td> or <tr> data-id
-                            const td = btn.closest('td');
-                            id = td ? td.dataset.id : null;
-                        }
                         if (!id) {
                             const tr = btn.closest('tr');
                             id = tr ? tr.dataset.id : null;
                         }
 
-                        console.debug('btn-view clicked, extracted id=', id, 'button:', btn);
+                        console.debug('View PO button clicked, extracted id=', id);
 
                         if (id) {
-                            // normalize numeric string
-                            id = id.toString();
-                            viewPODetails(id);
+                            viewPODetails(id.toString());
                         } else {
-                            showAlert('Gagal membuka detail: ID PO tidak ditemukan', 'danger');
+                            showAlert('Gagal membuka detail: ID PO tidak ditemukan pada tombol atau baris', 'danger');
                         }
                         return;
                     }
 
-                    // View Invoice (handle missing invId by searching invoices linked to the PO)
+                    // View Invoice
                     if (btn.classList.contains('btn-view-invoice')) {
+                        ev.preventDefault();
+                        ev.stopPropagation();
                         const invId = btn.dataset.invid;
                         const name = btn.dataset.name;
                         const poId = btn.dataset.poid;
