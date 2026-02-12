@@ -258,7 +258,7 @@ try {
         if (!empty($po['order_line'])) {
             $lines = $client->executePublic('purchase.order.line', 'read',
                 [$po['order_line']],
-                ['fields' => ['id', 'product_id', 'name', 'product_qty', 'price_unit', 'price_subtotal','product_uom_qty','quantity']]
+                ['fields' => ['id', 'product_id', 'name', 'product_qty', 'price_unit', 'price_subtotal','product_uom_qty']]
             );
 
             // Normalize quantities and subtotals so frontend JS can rely on `product_qty`

@@ -26,8 +26,10 @@ class OdooControllerBase extends ControllerBase
                 error_log("Odoo auth successful, UID: " . json_encode($result));
                 $this->view->setVar('odooError', null);
             } catch (\Exception $e) {
-                error_log("Odoo auth failed: " . $e->getMessage() . "\n" . $e->getTraceAsString());
-                $this->view->setVar('odooError', 'Odoo connection failed: ' . $e->getMessage());
+                $info = $this->odoo->getConnectionInfo();
+                $errorMsg = "Odoo connection failed: " . $e->getMessage() . " (DB: {$info['database']}, URL: {$info['url']}, User: {$info['username']})";
+                error_log($errorMsg . "\n" . $e->getTraceAsString());
+                $this->view->setVar('odooError', $errorMsg);
                 // keep $this->odoo instance (may still be usable for admin actions after Odoo is ready)
             }
         } catch (\Exception $e) {

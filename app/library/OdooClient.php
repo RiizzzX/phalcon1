@@ -31,9 +31,9 @@ class OdooClient
         }
 
         $this->url = $envUrl ?: 'http://odoo:8069';
-        $this->db = getenv('ODOO_DB') ?: 'new-odoo';
-        $this->username = getenv('ODOO_USERNAME') ?: 'admin@gmail.com';
-        $this->password = getenv('ODOO_PASSWORD') ?: 'admin';
+        $this->db = trim(getenv('ODOO_DB') ?: 'new-odoo');
+        $this->username = trim(getenv('ODOO_USERNAME') ?: 'admin@gmail.com');
+        $this->password = trim(getenv('ODOO_PASSWORD') ?: 'admin');
     }
 
     /**
