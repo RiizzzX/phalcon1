@@ -133,6 +133,7 @@
         <div id="alertContainer"></div>
 
         <div class="action-bar">
+            <button class="btn btn-danger" id="btnBulkDelete" style="display: none; background-color: #e74c3c;">🗑️ Hapus Terpilih (0)</button>
             <button class="btn btn-success" id="btnNewSO">➕ Buat Sales Order Baru</button>
             <!-- 'Kelola Customers' dihilangkan karena sekarang dikelola lewat Partners -->
             <button class="btn btn-success" id="btnAddCustomer" data-open-customer>➕ Tambah Customer</button>
@@ -150,6 +151,7 @@
             <table id="soTable">
                 <thead>
                     <tr>
+                        <th style="width: 40px; text-align: center;"><input type="checkbox" id="selectAll"></th>
                         <th>No. SO</th>
                         <th>Pelanggan</th>
                         <th>Tanggal</th>
@@ -271,6 +273,8 @@
 
         function setupEventListeners() {
             document.getElementById('btnNewSO').addEventListener('click', openNewSOModal);
+            const bulkBtn = document.getElementById('btnBulkDelete');
+            if (bulkBtn) bulkBtn.addEventListener('click', handleBulkDelete);
             const addCustomerBtn = document.getElementById('btnAddCustomer');
             if (addCustomerBtn) addCustomerBtn.addEventListener('click', function() { if (typeof showCustomerModal === 'function') showCustomerModal(); else document.querySelector('[data-open-customer]')?.click(); });
             document.getElementById('btnRefresh').addEventListener('click', loadSalesOrders);
@@ -374,6 +378,7 @@
 
                 const row = document.createElement('tr');
                 row.innerHTML = `
+                    <td style="text-align: center;"><input type="checkbox" class="so-checkbox" value="${order.id}"></td>
                     <td><strong>${order.name}</strong></td>
                     <td>${order.customer_name || 'N/A'}</td>
                     <td>${formatDate(order.date_order)}</td>
@@ -386,6 +391,22 @@
 
             tableContainer.style.display = 'block';
             emptyState.style.display = 'none';
+
+            // Add listener for select all
+            const selectAll = document.getElementById('selectAll');
+            if(selectAll) {
+                selectAll.checked = false;
+                selectAll.onchange = function() {
+                    const checkboxes = document.querySelectorAll('.so-checkbox');
+                    checkboxes.forEach(cb => cb.checked = this.checked);
+                    updateBulkBtn();
+                };
+            }
+
+            // Add listener for individual checkboxes
+            document.querySelectorAll('.so-checkbox').forEach(cb => {
+                cb.onchange = updateBulkBtn;
+            });
 
             // Attach handlers for view-invoice buttons (support fallback find/create invoice)
             document.querySelectorAll('.btn-view-invoice').forEach(btn=>btn.addEventListener('click', function(e){
@@ -704,6 +725,47 @@
 
         function closeConfirmModal() {
             document.getElementById('modalConfirm').classList.remove('show');
+        }
+
+        function updateBulkBtn() {
+            const checked = document.querySelectorAll('.so-checkbox:checked');
+            const btn = document.getElementById('btnBulkDelete');
+            if (btn) {
+                if (checked.length > 0) {
+                    btn.style.display = 'inline-block';
+                    btn.innerText = `🗑️ Hapus Terpilih (${checked.length})`;
+                } else {
+                    btn.style.display = 'none';
+                }
+            }
+            const selectAll = document.getElementById('selectAll');
+            const allHandlers = document.querySelectorAll('.so-checkbox');
+            if (selectAll && allHandlers.length > 0) {
+                selectAll.checked = (checked.length === allHandlers.length);
+            }
+        }
+
+        function handleBulkDelete() {
+            const checked = document.querySelectorAll('.so-checkbox:checked');
+            const ids = Array.from(checked).map(cb => cb.value);
+            if (ids.length === 0) return;
+            
+            if (confirm(`Yakin hapus ${ids.length} Sales Order yang dipilih?`)) {
+                showLoading(true);
+                const promises = ids.map(id => 
+                    fetch(`${API_URL}?action=odoo_sales_action&type=delete&id=${id}`).then(r => r.json())
+                );
+                
+                Promise.all(promises).then(results => {
+                    const results_success = results.filter(r => r && r.success).length;
+                    showAlert(`Selesai. ${results_success} SO berhasil dihapus.`, 'success');
+                    loadSalesOrders();
+                }).catch(err => {
+                    console.error(err);
+                    showAlert('Terjadi kesalahan saat menghapus beberapa data.', 'danger');
+                    loadSalesOrders();
+                });
+            }
         }
 
         function showLoading(show) {

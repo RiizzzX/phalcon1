@@ -17,7 +17,7 @@ services:
       DB_PASSWORD: secret
       ODOO_URL: "http://odoo:8069"
       ODOO_DB: "new-odoo"
-      ODOO_USERNAME: "admin@gmail.com"
+      ODOO_USERNAME: "admin"
       ODOO_PASSWORD: "admin"
     restart: unless-stopped
     logging:
@@ -56,7 +56,7 @@ services:
   postgres:
     image: postgres:16
     environment:
-      - POSTGRES_DB=odoo19
+      - POSTGRES_DB=new-odoo
       - POSTGRES_USER=odoo
       - POSTGRES_PASSWORD=odoo
     volumes:

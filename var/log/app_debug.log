@@ -1,0 +1,193 @@
+2026-02-12T02:51:46+00:00 PRE-HANDLE URI: / Method: GET
+2026-02-12T02:51:47+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T02:51:48+00:00 PRE-HANDLE URI: /index/getStats Method: GET
+2026-02-12T02:51:48+00:00 PRE-HANDLE URI: /img/favicon.ico Method: GET
+2026-02-12T02:51:52+00:00 ROUTE -> Controller: index Action: getStats
+2026-02-12T02:51:53+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T02:51:53+00:00 PRE-HANDLE URI: /odoo-dashboard Method: GET
+2026-02-12T02:51:56+00:00 ROUTE -> Controller: odooDashboard Action: index
+2026-02-12T02:51:57+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T02:51:57+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T02:52:00+00:00 PRE-HANDLE URI: /odoo-purchase Method: GET
+2026-02-12T02:52:00+00:00 ROUTE -> Controller: odooPurchase Action: index
+2026-02-12T02:52:01+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T02:52:01+00:00 PRE-HANDLE URI: /inventory-api/list Method: GET
+2026-02-12T02:52:03+00:00 ROUTE -> Controller: inventory-api Action: list
+2026-02-12T02:52:04+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T02:52:10+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T02:52:10+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T02:52:11+00:00 PRE-HANDLE URI: /odoo-partners Method: GET
+2026-02-12T02:52:11+00:00 ROUTE -> Controller: odoo-partners Action: index
+2026-02-12T02:52:12+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T02:52:13+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T02:52:14+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T02:52:14+00:00 PRE-HANDLE URI: /odoo-inventory Method: GET
+2026-02-12T02:52:14+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T02:52:15+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T02:52:16+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:04:31+00:00 PRE-HANDLE URI: /odoo-inventory Method: GET
+2026-02-12T03:04:33+00:00 ROUTE -> Controller: odooInventory Action: index
+2026-02-12T03:04:34+00:00 PRE-HANDLE URI: /img/favicon.ico Method: GET
+2026-02-12T03:04:34+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:07:24+00:00 PRE-HANDLE URI: /odoo-inventory Method: GET
+2026-02-12T03:07:25+00:00 ROUTE -> Controller: odooInventory Action: index
+2026-02-12T03:07:25+00:00 PRE-HANDLE URI: /img/favicon.ico Method: GET
+2026-02-12T03:07:25+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:07:41+00:00 PRE-HANDLE URI: /odoo-inventory Method: GET
+2026-02-12T03:07:42+00:00 ROUTE -> Controller: odooInventory Action: index
+2026-02-12T03:07:43+00:00 PRE-HANDLE URI: /img/favicon.ico Method: GET
+2026-02-12T03:07:43+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:07:59+00:00 PRE-HANDLE URI: /odoo-inventory/delete/40 Method: POST
+2026-02-12T03:08:00+00:00 ROUTE -> Controller: odooInventory Action: delete
+2026-02-12T03:08:00+00:00 PRE-HANDLE URI: /odoo-inventory Method: GET
+2026-02-12T03:08:01+00:00 ROUTE -> Controller: odooInventory Action: index
+2026-02-12T03:08:02+00:00 PRE-HANDLE URI: /odoo-inventory/delete/39 Method: POST
+2026-02-12T03:08:02+00:00 PRE-HANDLE URI: /img/favicon.ico Method: GET
+2026-02-12T03:08:02+00:00 ROUTE -> Controller: odooInventory Action: delete
+2026-02-12T03:08:02+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:08:05+00:00 PRE-HANDLE URI: /odoo-inventory/delete/39 Method: POST
+2026-02-12T03:08:05+00:00 ROUTE -> Controller: odooInventory Action: delete
+2026-02-12T03:08:33+00:00 PRE-HANDLE URI: /odoo-inventory Method: GET
+2026-02-12T03:08:35+00:00 ROUTE -> Controller: odooInventory Action: index
+2026-02-12T03:08:36+00:00 PRE-HANDLE URI: /img/favicon.ico Method: GET
+2026-02-12T03:08:36+00:00 PRE-HANDLE URI: /odoo-inventory Method: GET
+2026-02-12T03:08:37+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:08:39+00:00 ROUTE -> Controller: odooInventory Action: index
+2026-02-12T03:08:40+00:00 PRE-HANDLE URI: /img/favicon.ico Method: GET
+2026-02-12T03:08:40+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:08:42+00:00 PRE-HANDLE URI: /odoo-inventory/delete/38 Method: POST
+2026-02-12T03:08:42+00:00 ROUTE -> Controller: odooInventory Action: delete
+2026-02-12T03:08:42+00:00 PRE-HANDLE URI: /odoo-inventory Method: GET
+2026-02-12T03:08:43+00:00 ROUTE -> Controller: odooInventory Action: index
+2026-02-12T03:08:44+00:00 PRE-HANDLE URI: /img/favicon.ico Method: GET
+2026-02-12T03:08:45+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:08:46+00:00 PRE-HANDLE URI: /odoo-inventory/delete/37 Method: POST
+2026-02-12T03:08:48+00:00 ROUTE -> Controller: odooInventory Action: delete
+2026-02-12T03:08:48+00:00 PRE-HANDLE URI: /odoo-inventory Method: GET
+2026-02-12T03:08:49+00:00 ROUTE -> Controller: odooInventory Action: index
+2026-02-12T03:08:50+00:00 PRE-HANDLE URI: /img/favicon.ico Method: GET
+2026-02-12T03:08:50+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:08:52+00:00 PRE-HANDLE URI: /odoo-inventory/delete/36 Method: POST
+2026-02-12T03:08:52+00:00 ROUTE -> Controller: odooInventory Action: delete
+2026-02-12T03:08:53+00:00 PRE-HANDLE URI: /odoo-inventory Method: GET
+2026-02-12T03:08:56+00:00 ROUTE -> Controller: odooInventory Action: index
+2026-02-12T03:08:57+00:00 PRE-HANDLE URI: /img/favicon.ico Method: GET
+2026-02-12T03:08:57+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:10:41+00:00 PRE-HANDLE URI: /odoo-inventory Method: GET
+2026-02-12T03:10:42+00:00 ROUTE -> Controller: odooInventory Action: index
+2026-02-12T03:10:43+00:00 PRE-HANDLE URI: /img/favicon.ico Method: GET
+2026-02-12T03:10:43+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:11:39+00:00 PRE-HANDLE URI: /odoo-inventory/bulkDelete Method: POST
+2026-02-12T03:11:40+00:00 ROUTE -> Controller: odooInventory Action: bulkDelete
+2026-02-12T03:11:44+00:00 PRE-HANDLE URI: /odoo-inventory Method: GET
+2026-02-12T03:11:44+00:00 ROUTE -> Controller: odooInventory Action: index
+2026-02-12T03:11:44+00:00 PRE-HANDLE URI: /img/favicon.ico Method: GET
+2026-02-12T03:11:45+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:11:54+00:00 PRE-HANDLE URI: /odoo-inventory Method: GET
+2026-02-12T03:11:54+00:00 PRE-HANDLE URI: /odoo-inventory Method: GET
+2026-02-12T03:11:55+00:00 ROUTE -> Controller: odooInventory Action: index
+2026-02-12T03:11:55+00:00 ROUTE -> Controller: odooInventory Action: index
+2026-02-12T03:11:55+00:00 PRE-HANDLE URI: /img/favicon.ico Method: GET
+2026-02-12T03:11:55+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:12:01+00:00 PRE-HANDLE URI: /odoo-inventory Method: GET
+2026-02-12T03:12:01+00:00 ROUTE -> Controller: odooInventory Action: index
+2026-02-12T03:12:02+00:00 PRE-HANDLE URI: /img/favicon.ico Method: GET
+2026-02-12T03:12:02+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:12:14+00:00 PRE-HANDLE URI: /odoo-inventory Method: GET
+2026-02-12T03:12:15+00:00 ROUTE -> Controller: odooInventory Action: index
+2026-02-12T03:12:15+00:00 PRE-HANDLE URI: /img/favicon.ico Method: GET
+2026-02-12T03:12:15+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:12:18+00:00 PRE-HANDLE URI: /odoo/dashboard Method: GET
+2026-02-12T03:12:18+00:00 ROUTE -> Controller: odooDashboard Action: index
+2026-02-12T03:12:19+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T03:12:19+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:18:52+00:00 PRE-HANDLE URI: /odoo/dashboard Method: GET
+2026-02-12T03:18:52+00:00 ROUTE -> Controller: odooDashboard Action: index
+2026-02-12T03:18:53+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T03:18:53+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:18:54+00:00 PRE-HANDLE URI: /odoo/dashboard Method: GET
+2026-02-12T03:18:54+00:00 ROUTE -> Controller: odooDashboard Action: index
+2026-02-12T03:18:55+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T03:18:55+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:18:56+00:00 PRE-HANDLE URI: /odoo-purchase Method: GET
+2026-02-12T03:18:56+00:00 ROUTE -> Controller: odooPurchase Action: index
+2026-02-12T03:18:57+00:00 PRE-HANDLE URI: /inventory-api/list Method: GET
+2026-02-12T03:18:57+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T03:18:58+00:00 ROUTE -> Controller: inventory-api Action: list
+2026-02-12T03:18:59+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:19:41+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T03:19:42+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:19:44+00:00 PRE-HANDLE URI: /odoo-partners Method: GET
+2026-02-12T03:19:45+00:00 ROUTE -> Controller: odoo-partners Action: index
+2026-02-12T03:19:46+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T03:19:46+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:21:14+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T03:21:14+00:00 PRE-HANDLE URI: /odoo-invoicing Method: GET
+2026-02-12T03:21:16+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:21:17+00:00 ROUTE -> Controller: odooInvoicing Action: index
+2026-02-12T03:21:19+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T03:21:22+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:24:48+00:00 PRE-HANDLE URI: /odoo-invoicing Method: GET
+2026-02-12T03:24:49+00:00 ROUTE -> Controller: odooInvoicing Action: index
+2026-02-12T03:24:49+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T03:24:50+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:48:31+00:00 PRE-HANDLE URI: /odoo-invoicing Method: GET
+2026-02-12T03:48:41+00:00 ROUTE -> Controller: odooInvoicing Action: index
+2026-02-12T03:48:42+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T03:48:42+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:49:48+00:00 PRE-HANDLE URI: /odoo-sales Method: GET
+2026-02-12T03:49:49+00:00 ROUTE -> Controller: odooSales Action: index
+2026-02-12T03:49:50+00:00 PRE-HANDLE URI: /inventory-api/list Method: GET
+2026-02-12T03:49:50+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T03:49:52+00:00 ROUTE -> Controller: inventory-api Action: list
+2026-02-12T03:49:52+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T03:49:54+00:00 PRE-HANDLE URI: /inventory-api/list Method: GET
+2026-02-12T03:49:54+00:00 ROUTE -> Controller: inventory-api Action: list
+2026-02-12T04:02:20+00:00 PRE-HANDLE URI: /scripts/test_auth.php Method: GET
+2026-02-12T04:02:23+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T04:13:28+00:00 PRE-HANDLE URI: /odoo-sales Method: GET
+2026-02-12T04:13:34+00:00 ROUTE -> Controller: odooSales Action: index
+2026-02-12T04:13:34+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T04:13:34+00:00 PRE-HANDLE URI: /inventory-api/list Method: GET
+2026-02-12T04:13:35+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T04:13:37+00:00 ROUTE -> Controller: inventory-api Action: list
+2026-02-12T04:13:38+00:00 PRE-HANDLE URI: /inventory-api/list Method: GET
+2026-02-12T04:13:39+00:00 ROUTE -> Controller: inventory-api Action: list
+2026-02-12T04:14:05+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T04:14:08+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T04:14:08+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T04:14:08+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T04:14:09+00:00 PRE-HANDLE URI: /odoo-sales Method: GET
+2026-02-12T04:14:11+00:00 ROUTE -> Controller: odooSales Action: index
+2026-02-12T04:14:13+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T04:14:13+00:00 PRE-HANDLE URI: /inventory-api/list Method: GET
+2026-02-12T04:14:14+00:00 ROUTE -> Controller: inventory-api Action: list
+2026-02-12T04:14:15+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T04:14:15+00:00 PRE-HANDLE URI: /odoo-invoicing Method: GET
+2026-02-12T04:14:20+00:00 ROUTE -> Controller: odooInvoicing Action: index
+2026-02-12T04:14:20+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T04:14:20+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T04:14:30+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T04:14:30+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T04:15:18+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T04:15:19+00:00 PRE-HANDLE URI: /odoo-invoicing Method: GET
+2026-02-12T04:15:19+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T04:15:21+00:00 ROUTE -> Controller: odooInvoicing Action: index
+2026-02-12T04:15:21+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T04:15:22+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T04:15:32+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T04:15:32+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T04:15:33+00:00 PRE-HANDLE URI: /odoo-sales Method: GET
+2026-02-12T04:15:36+00:00 ROUTE -> Controller: odooSales Action: index
+2026-02-12T04:15:37+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T04:15:37+00:00 PRE-HANDLE URI: /inventory-api/list Method: GET
+2026-02-12T04:15:38+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T04:15:38+00:00 ROUTE -> Controller: inventory-api Action: list
+2026-02-12T04:15:43+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T04:15:44+00:00 ROUTE -> Controller: index Action: index
+2026-02-12T04:15:46+00:00 PRE-HANDLE URI: /odoo-purchase Method: GET
+2026-02-12T04:15:49+00:00 ROUTE -> Controller: odooPurchase Action: index
+2026-02-12T04:15:49+00:00 PRE-HANDLE URI: /inventory-api/list Method: GET
+2026-02-12T04:15:49+00:00 PRE-HANDLE URI: /favicon.ico Method: GET
+2026-02-12T04:15:51+00:00 ROUTE -> Controller: inventory-api Action: list
+2026-02-12T04:15:51+00:00 ROUTE -> Controller: index Action: index

@@ -1,0 +1,105 @@
+{
+    "time": "2026-02-12T04:16:08+00:00",
+    "tag": "list_response",
+    "request": {
+        "action": "list_purchase_orders"
+    },
+    "data": {
+        "orders_count": 11,
+        "sample": [
+            {
+                "id": 20,
+                "name": "P00023",
+                "partner_id": [
+                    20,
+                    "ega"
+                ],
+                "date_order": "2026-02-03 00:00:00",
+                "amount_total": 345000,
+                "state": "purchase",
+                "order_line": [
+                    13
+                ],
+                "note": false,
+                "invoice_ids": [
+                    8
+                ],
+                "supplier_name": "ega",
+                "supplier_id": 20
+            },
+            {
+                "id": 19,
+                "name": "P00022",
+                "partner_id": [
+                    15,
+                    "ega"
+                ],
+                "date_order": "2026-02-02 00:00:00",
+                "amount_total": 36027.2,
+                "state": "purchase",
+                "order_line": [
+                    12
+                ],
+                "note": false,
+                "invoice_ids": [],
+                "supplier_name": "ega",
+                "supplier_id": 15
+            },
+            {
+                "id": 17,
+                "name": "P00020",
+                "partner_id": [
+                    10,
+                    "ega"
+                ],
+                "date_order": "2026-02-02 00:00:00",
+                "amount_total": 27020.4,
+                "state": "purchase",
+                "order_line": [
+                    10
+                ],
+                "note": "<p>tr<\/p>",
+                "invoice_ids": [],
+                "supplier_name": "ega",
+                "supplier_id": 10
+            },
+            {
+                "id": 16,
+                "name": "P00019",
+                "partner_id": [
+                    10,
+                    "ega"
+                ],
+                "date_order": "2026-02-02 00:00:00",
+                "amount_total": 27020.4,
+                "state": "cancel",
+                "order_line": [
+                    8
+                ],
+                "note": "<p>tr<\/p>",
+                "invoice_ids": [],
+                "supplier_name": "ega",
+                "supplier_id": 10
+            },
+            {
+                "id": 15,
+                "name": "P00017",
+                "partner_id": [
+                    10,
+                    "ega"
+                ],
+                "date_order": "2026-02-02 00:00:00",
+                "amount_total": 27020.4,
+                "state": "purchase",
+                "order_line": [
+                    9
+                ],
+                "note": "<p>tr<\/p>",
+                "invoice_ids": [],
+                "supplier_name": "ega",
+                "supplier_id": 10
+            }
+        ],
+        "odoo_diag": []
+    }
+}

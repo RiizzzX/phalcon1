@@ -208,6 +208,43 @@ class OdooInventoryController extends ControllerBase
     }
 
     /**
+     * Delete multiple products
+     */
+    public function bulkDeleteAction()
+    {
+        if (!$this->request->isPost()) {
+            $this->view->disable();
+            $this->response->setStatusCode(400);
+            return $this->response->setJsonContent(['success' => false, 'message' => 'Invalid request']);
+        }
+
+        try {
+            $ids = $this->request->getPost('ids');
+            if (empty($ids) || !is_array($ids)) {
+                $this->view->disable();
+                return $this->response->setJsonContent(['success' => false, 'message' => 'No products selected']);
+            }
+
+            $count = 0;
+            foreach ($ids as $id) {
+                $product = Inventory::findFirstById($id);
+                if ($product && $product->delete()) {
+                    $count++;
+                }
+            }
+
+            $this->view->disable();
+            return $this->response->setJsonContent([
+                'success' => true, 
+                'message' => "Successfully deleted $count products"
+            ]);
+        } catch (\Exception $e) {
+            $this->view->disable();
+            return $this->response->setJsonContent(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    /**
      * Search products
      */
     public function searchAction()

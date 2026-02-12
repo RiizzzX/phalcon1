@@ -416,6 +416,11 @@ $router->add('/odoo-inventory/delete/{id:[0-9]+}', [
     'action' => 'delete'
 ])->via(['POST'])->setName('odoo_inventory_delete_post');
 
+$router->add('/odoo-inventory/bulkDelete', [
+    'controller' => 'odooInventory',
+    'action' => 'bulkDelete'
+])->via(['POST'])->setName('odoo_inventory_bulk_delete');
+
 // Odoo Sales routes
 $router->add('/odoo-sales', [
     'controller' => 'odooSales',

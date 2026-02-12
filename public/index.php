@@ -84,12 +84,35 @@ try {
     
     // Prefer URL from rewrite (_url) when available, otherwise use REQUEST_URI
     $uri = $_GET['_url'] ?? $_SERVER['REQUEST_URI'];
-    error_log("DEBUG: Handling URI -> " . $uri . " Method: " . $_SERVER['REQUEST_METHOD']);
-    $response = $application->handle($uri);
     
+    // Clean URL: Remove /public if it exists at the start (common when DocumentRoot is projet root)
+    // and remove query string from REQUEST_URI
+    $uri = parse_url($uri, PHP_URL_PATH);
+    $uri = preg_replace('/^\/public/', '', $uri);
+    
+    // Ensure URI has a leading slash for the router, but no trailing slash for consistency
+    $uri = '/' . ltrim($uri, '/');
+    if ($uri !== '/') {
+        $uri = rtrim($uri, '/');
+    }
+    
+    error_log("DEBUG: Final URI for Phalcon -> " . $uri);
+
+    // Local debug logging without requiring sudo. Writes to var/log/app_debug.log inside project.
+    $logFile = BASE_PATH . '/var/log/app_debug.log';
+    if (!is_dir(dirname($logFile))) {
+        @mkdir(dirname($logFile), 0755, true);
+    }
+    @file_put_contents($logFile, date('c') . " PRE-HANDLE URI: " . $uri . " Method: " . $_SERVER['REQUEST_METHOD'] . "\n", FILE_APPEND);
+
+    $response = $application->handle($uri);
+
     // Debug: log matched route
-    error_log("Matched Controller: " . $application->getDI()->getDispatcher()->getControllerName());
-    error_log("Matched Action: " . $application->getDI()->getDispatcher()->getActionName());
+    $controller = $application->getDI()->getDispatcher()->getControllerName();
+    $action = $application->getDI()->getDispatcher()->getActionName();
+    error_log("Matched Controller: " . $controller);
+    error_log("Matched Action: " . $action);
+    @file_put_contents($logFile, date('c') . " ROUTE -> Controller: " . $controller . " Action: " . $action . "\n", FILE_APPEND);
 
     echo $response->getContent();
 } catch (\Exception $e) {

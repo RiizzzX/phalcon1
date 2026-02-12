@@ -20,7 +20,8 @@
             <h1>Inventory Manjemen</h1>
             <p>Sistem manajemen inventaris sederhana yang membantu Anda mengelola dan melacak barang-barang Anda dengan mudah dan efisien.</p>
             <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
-                <a href="<?= $this->url->get('index/list') ?>" class="btn">Mulai Menggunakan</a>
+                <!-- Mulai Menggunakan: use index.php fallback so link works even without mod_rewrite -->
+                <a href="<?= $this->url->get('index.php?_url=/index/list') ?>" data-nice="<?= $this->url->get(['for' => 'index_list']) ?>" class="btn btn-start">Mulai Menggunakan</a>
                 <!-- Odoo Dashboard: primary link + fallback for servers without mod_rewrite -->
                 <a href="<?= $this->url->get('index.php?_url=/odoo-dashboard') ?>" data-nice="<?= $this->url->get(['for' => 'odoo_dashboard']) ?>" class="btn btn-odoo" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                     🎯 Odoo Dashboard

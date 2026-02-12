@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <!-- DEBUG: Page Rendered at <?= date('Y-m-d H:i:s') ?> -->
     <title><?= $title ?? 'Inventory Management' ?></title>
     <style>
         * { box-sizing: border-box; }
@@ -69,7 +68,10 @@
         <div class="header-left">
             <a href="/odoo/dashboard" class="btn btn-secondary">← Kembali ke Dashboard</a>
         </div>
-        <div class="header-right">            <button onclick="syncFromOdoo(this)" class="btn btn-secondary" style="margin-right: 10px;">Sync with Odoo</button>            <button onclick="openAddModal()" class="btn btn-primary">+ Tambah Produk</button>
+        <div class="header-right">
+            <button id="bulkDeleteBtn" onclick="bulkDelete()" class="btn btn-danger" style="display: none; margin-right: 10px;">Hapus Terpilih (0)</button>
+            <button onclick="syncFromOdoo()" class="btn btn-secondary" style="margin-right: 10px;">Sync with Odoo</button>
+            <button onclick="openAddModal()" class="btn btn-primary">+ Tambah Produk</button>
         </div>
     </div>
 
@@ -96,6 +98,7 @@
             <table>
                 <thead>
                     <tr>
+                        <th style="width: 40px;"><input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)"></th>
                         <th>ID</th>
                         <th>Nama</th>
                         <th>SKU</th>
@@ -110,6 +113,7 @@
                 <tbody>
                     <?php foreach ($products as $product): ?>
                         <tr>
+                            <td><input type="checkbox" class="product-checkbox" value="<?= $product->id ?>" onclick="updateBulkBtn()"></td>
                             <td><?= $product->id ?></td>
                             <td><strong><?= htmlspecialchars($product->name) ?></strong></td>
                             <td><?= htmlspecialchars($product->sku ?? '-') ?></td>
@@ -160,7 +164,7 @@
         $perms = $stat ? substr(sprintf('%o', $stat['mode']), -4) : 'n/a';
         echo "<pre style=\"background:#fff8c5;padding:10px;border-radius:6px;border:1px solid #f0e6b8;color:#333;\">Inventory include debug:\n  path: $customerPartial\n  exists: $exists\n  readable: $read\n  perms: $perms\n  web_remote: " . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . "\n</pre>";
     }
-?>
+    ?>
 
 <div id="addModal" class="modal">
     <div class="modal-content">
@@ -509,10 +513,61 @@ function deleteProduct(id) {
     }
 }
 
-function syncFromOdoo(btn) {
+function toggleSelectAll(source) {
+    const checkboxes = document.querySelectorAll('.product-checkbox');
+    checkboxes.forEach(cb => cb.checked = source.checked);
+    updateBulkBtn();
+}
+
+function updateBulkBtn() {
+    const checked = document.querySelectorAll('.product-checkbox:checked');
+    const btn = document.getElementById('bulkDeleteBtn');
+    const selectAll = document.getElementById('selectAll');
+    const all = document.querySelectorAll('.product-checkbox');
+    
+    if (checked.length > 0) {
+        btn.style.display = 'inline-block';
+        btn.innerText = `Hapus Terpilih (${checked.length})`;
+    } else {
+        btn.style.display = 'none';
+    }
+    
+    if (all.length > 0) {
+        selectAll.checked = checked.length === all.length;
+    }
+}
+
+function bulkDelete() {
+    const checked = document.querySelectorAll('.product-checkbox:checked');
+    const ids = Array.from(checked).map(cb => cb.value);
+    
+    if (ids.length === 0) return;
+    
+    if (confirm(`Yakin hapus ${ids.length} produk yang dipilih?`)) {
+        const formData = new FormData();
+        ids.forEach(id => formData.append('ids[]', id));
+        
+        fetch('/odoo-inventory/bulkDelete', {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(e => alert('Error: ' + (e.message || 'Network error')));
+    }
+}
+
+function syncFromOdoo() {
     if(!confirm('This will synchronize local products with Odoo. Continue?')) return;
     
-    if (!btn) return;
+    const btn = event.target;
     const originalText = btn.innerText;
     btn.innerText = 'Syncing...';
     btn.disabled = true;

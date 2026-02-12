@@ -1933,7 +1933,7 @@ try {
         try {
             $odooPartners = $client->executePublic('res.partner', 'search_read',
                 [[]],
-                ['fields' => ['id', 'name', 'email', 'phone', 'street', 'city', 'country_id']]
+                ['fields' => ['id', 'name', 'email', 'phone', 'street', 'city', 'country_id', 'customer_rank', 'supplier_rank']]
             );
             if (is_array($odooPartners)) {
                 $partners = $odooPartners;
@@ -1975,8 +1975,8 @@ try {
                     $s['is_customer'] = (bool)$lu['is_customer'];
                     $s['is_supplier'] = (bool)$lu['is_supplier'];
                 } else {
-                    $s['is_customer'] = false;
-                    $s['is_supplier'] = false;
+                    $s['is_customer'] = (isset($s['customer_rank']) && $s['customer_rank'] > 0);
+                    $s['is_supplier'] = (isset($s['supplier_rank']) && $s['supplier_rank'] > 0);
                 }
             }
             unset($s);
@@ -2275,32 +2275,21 @@ try {
         $suppliers = [];
         // Try to fetch suppliers from Odoo first (best-effort)
         try {
-                // Prefer domain filtering by supplier_rank (>0). Avoid requesting non-existent 'supplier' field which can raise errors in some Odoo versions.
-                try {
-                    $odooSuppliers = $client->executePublic('res.partner', 'search_read',
-                        [[['supplier_rank', '>', 0]]],
-                        ['fields' => ['id', 'name', 'email', 'phone', 'supplier_rank']]
-                    );
-                } catch (Exception $domainErr) {
-                    // Domain search may fail on some installs; fall back to fetching all partners and filter locally by supplier_rank
-                    error_log('Warning: supplier domain query failed, falling back to full partner fetch: ' . $domainErr->getMessage());
-                    $allPartners = $client->executePublic('res.partner', 'search_read',
-                        [[]],
-                        ['fields' => ['id', 'name', 'email', 'phone', 'supplier_rank']]
-                    );
-                    $odooSuppliers = [];
-                    if (is_array($allPartners)) {
-                        foreach ($allPartners as $p) {
-                            if ((isset($p['supplier_rank']) && $p['supplier_rank'] > 0)) {
-                        }
-                    }
-                }
-            }
-
+            // Filter by supplier_rank > 0 for Odoo suppliers
+            $odooSuppliers = $client->executePublic('res.partner', 'search_read',
+                [[['supplier_rank', '>', 0]]],
+                ['fields' => ['id', 'name', 'email', 'phone']]
+            );
             if (is_array($odooSuppliers)) $suppliers = $odooSuppliers;
         } catch (Exception $e) {
-            // log and continue — we'll still include local suppliers
-            error_log('Warning: list_suppliers Odoo fetch failed: ' . $e->getMessage());
+            // Fallback to all partners if rank filtering fails
+            error_log('Warning: list_suppliers Odoo filtered fetch failed, trying full fetch: ' . $e->getMessage());
+            try {
+                $all = $client->executePublic('res.partner', 'search_read', [[]], ['fields' => ['id', 'name', 'email', 'phone']]);
+                if (is_array($all)) $suppliers = $all;
+            } catch (Exception $e2) {
+                error_log('Critical: list_suppliers Odoo fetch failed: ' . $e2->getMessage());
+            }
         }
 
         // Append local users (so suppliers created locally appear in lists)
@@ -2356,13 +2345,21 @@ try {
     if ($action === 'list_customers') {
         $customers = [];
         try {
+            // Filter by customer_rank > 0 for Odoo customers
             $odooCustomers = $client->executePublic('res.partner', 'search_read',
-                [[]],
+                [[['customer_rank', '>', 0]]],
                 ['fields' => ['id', 'name', 'email', 'phone', 'city']]
             );
             if (is_array($odooCustomers)) $customers = $odooCustomers;
         } catch (Exception $e) {
-            error_log('Warning: list_customers Odoo fetch failed: ' . $e->getMessage());
+            // Fallback to all partners if rank filtering fails
+            error_log('Warning: list_customers Odoo filtered fetch failed, trying full fetch: ' . $e->getMessage());
+            try {
+                $all = $client->executePublic('res.partner', 'search_read', [[]], ['fields' => ['id', 'name', 'email', 'phone', 'city']]);
+                if (is_array($all)) $customers = $all;
+            } catch (Exception $e2) {
+                error_log('Critical: list_customers Odoo fetch failed: ' . $e2->getMessage());
+            }
         }
 
         // Append local users as customers (id prefixed with local-)

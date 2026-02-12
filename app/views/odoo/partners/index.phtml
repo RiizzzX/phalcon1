@@ -77,6 +77,7 @@
             </div>
             <button id="btnSearchPart" class="btn-main"><span>🔍 Cari</span></button>
             <button id="btnRefreshPart" class="action-btn view">🔄 Refresh</button>
+            <button id="btnBulkDeletePart" class="action-btn delete" style="display: none; background: #fee2e2; color: #dc2626;">🗑️ Hapus Terpilih (0)</button>
             <button id="btnCleanupPart" class="action-btn delete" style="background: rgba(245, 158, 11, 0.1); color: #b45309;">🧹 Hapus Duplikat</button>
             <button id="openPartnerModal" class="btn-main" style="background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); width: auto;">➕ Tambah Partner</button>
         </div>
@@ -89,7 +90,8 @@
             <table class="modern-table">
                 <thead>
                     <tr>
-                        <th style="width: 60px; padding-left: 24px;">ID</th>
+                        <th style="width: 40px; text-align: center; padding-left: 24px;"><input type="checkbox" id="selectAllPart"></th>
+                        <th style="width: 60px;">ID</th>
                         <th>Nama Partner</th>
                         <th>Email</th>
                         <th>Telepon</th>
@@ -220,6 +222,45 @@
 const API = '/api.php';
 function showPartAlert(msg,type='info'){ const c=document.getElementById('partAlert'); c.innerHTML=`<div class="alert alert-${type}">${msg}</div>`; setTimeout(()=>c.innerHTML='',4000); }
 
+function updateBulkBtnPart() {
+    const checked = document.querySelectorAll('.part-checkbox:checked');
+    const btn = document.getElementById('btnBulkDeletePart');
+    if (btn) {
+        if (checked.length > 0) {
+            btn.style.display = 'inline-flex';
+            btn.innerText = `🗑️ Hapus Terpilih (${checked.length})`;
+        } else {
+            btn.style.display = 'none';
+        }
+    }
+    const selectAll = document.getElementById('selectAllPart');
+    const all = document.querySelectorAll('.part-checkbox');
+    if (selectAll && all.length > 0) {
+        selectAll.checked = (checked.length === all.length);
+    }
+}
+
+document.getElementById('btnBulkDeletePart').addEventListener('click', function() {
+    const checked = document.querySelectorAll('.part-checkbox:checked');
+    const ids = Array.from(checked).map(cb => cb.value);
+    if (ids.length === 0) return;
+    
+    if (confirm(`Yakin hapus ${ids.length} Partner yang dipilih?`)) {
+        const promises = ids.map(id => fetch(`/api.php?action=delete_customer&id=${id}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: id }) }).then(r => r.json()));
+        
+        Promise.all(promises).then(results => {
+            const successCount = results.filter(r => r && r.success).length;
+            showPartAlert(`Selesai. ${successCount} Partner berhasil dihapus.`, 'success');
+            loadPartners();
+            document.getElementById('btnBulkDeletePart').style.display = 'none';
+        }).catch(err => {
+            console.error(err);
+            showPartAlert('Terjadi kesalahan saat menghapus data.', 'danger');
+            loadPartners();
+        });
+    }
+});
+
 function loadPartners(q=''){
     const tbody=document.getElementById('partnersBody');
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 30px;"><div style="color:#aaa">Sedang memuat data...</div></td></tr>';
@@ -242,7 +283,8 @@ function loadPartners(q=''){
             const r2 = (s.supplier_rank && s.supplier_rank>0) || s.is_supplier || false;
             const tr=document.createElement('tr'); 
             
-            tr.innerHTML=`<td style="padding-left: 24px;"><span style="background:#edf2f7; padding:4px 8px; border-radius:4px; font-family:monospace; font-size:13px;">#${id}</span></td>
+            tr.innerHTML=`<td style="text-align: center; padding-left: 24px;"><input type="checkbox" class="part-checkbox" value="${id}"></td>
+                          <td><span style="background:#edf2f7; padding:4px 8px; border-radius:4px; font-family:monospace; font-size:13px;">#${id}</span></td>
                           <td style="font-weight:600; color:#2d3748;">${s.name||'-'}</td>
                           <td style="color:#4a5568;">${s.email||'-'}</td>
                           <td style="color:#4a5568;">${s.phone||'-'}</td>
@@ -259,8 +301,21 @@ function loadPartners(q=''){
                           </td>`;
             tbody.appendChild(tr);
 
+            // attach select all handler
+            const selectAll = document.getElementById('selectAllPart');
+            if(selectAll) {
+                selectAll.onchange = function() {
+                    document.querySelectorAll('.part-checkbox').forEach(cb => cb.checked = this.checked);
+                    updateBulkBtnPart();
+                };
+            }
+            
+            // individual checkbox handler
+            tr.querySelector('.part-checkbox').onchange = updateBulkBtnPart;
+
             // attach handlers
             tr.querySelectorAll('input[type="checkbox"]').forEach(ch => {
+                if(ch.classList.contains('part-checkbox')) return;
                 ch.addEventListener('change', function(){
                     const role = this.dataset.role;
                     // read other checkbox state too
